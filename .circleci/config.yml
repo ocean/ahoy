@@ -29,6 +29,10 @@ jobs:
       - run: go mod vendor
       - go/save-cache
       - run: bash build.sh -v
-      - run: golangci-lint run
+      - run: |
+          env
+          echo $GOPATH
+          /home/circleci/go/bin/golangci-lint run
+          golangci-lint run
       - run: ./ahoy test
       - go/test
