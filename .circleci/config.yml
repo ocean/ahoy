@@ -33,6 +33,5 @@ jobs:
           env
           echo $GOPATH
           /home/circleci/go/bin/golangci-lint run
-          golangci-lint run
       - run: ./ahoy test
       - go/test
