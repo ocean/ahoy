@@ -1,13 +1,15 @@
 version: 2
 jobs:
   build:
-    working_directory: /go/src/github.com/ahoy-cli/ahoy
+    working_directory: $HOME/go/src/github.com/ahoy-cli/ahoy
     docker:
-      - image: circleci/golang
+      - image: cimg/go
     steps:
       - checkout
       - run: git clone https://github.com/bats-core/bats-core.git && cd bats-core && sudo ./install.sh /usr/local && bats --version && cd -
+      - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.46.2
       - run: sudo apt install php
       - run: go get -u golang.org/x/lint/golint
       - run: bash build.sh -v
+      - run: golangci-lint run
       - run: ./ahoy test
