@@ -26,6 +26,7 @@ jobs:
       - go/load-cache
       - go/mod-download
       - run: go get -u golang.org/x/lint/golint
+      - run: go mod vendor
       - go/save-cache
       - run: bash build.sh -v
       - run: golangci-lint run
