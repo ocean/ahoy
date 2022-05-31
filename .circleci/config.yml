@@ -11,7 +11,7 @@ jobs:
     executor: 
       name: go/default
       tag: '1.18'
-    working_directory: $HOME/go/src/github.com/ahoy-cli/ahoy
+    working_directory: /home/circleci/go/src/github.com/ahoy-cli/ahoy
     steps:
       - checkout
       - run: git clone https://github.com/bats-core/bats-core.git && cd bats-core && sudo ./install.sh /usr/local && bats --version && cd -
@@ -20,9 +20,9 @@ jobs:
       # - run: sudo apt install php
       - run: |
           pwd
+          ls -al
           ls -al /home/circleci/go/src/github.com
           ls -al /home/circleci/go/src/github.com/ahoy-cli/ahoy
-          tree /home/circleci/go
       - go/load-cache
       - go/mod-download
       - run: go get -u golang.org/x/lint/golint
