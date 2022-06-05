@@ -28,7 +28,10 @@ jobs:
       - run: go get -u golang.org/x/lint/golint
       - run: go mod vendor
       - go/save-cache
-      - run: bash build.sh -v
+      # - run: bash build.sh -v
+      - run: |
+          make
+          make version
       # - run: |
       #     env
       #     echo $GOPATH

@@ -1,6 +1,7 @@
 VERSION ?= $(shell cat VERSION)
+GITCOMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
+VERSION ?= $(git describe --tag $(GITCOMMIT))
 
-GITCOMMIT := $(shell git rev-parse HEAD 2>/dev/null)
 GITBRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 BUILDTIME := $(shell TZ=GMT date "+%Y-%m-%d_%H:%M_GMT")
 LDFLAGS := "-X main.Version=$(VERSION) -X main.GitCommit=$(GITCOMMIT) -X main.GitBranch=$(GITBRANCH) -X main.BuildTime=$(BUILDTIME)"
@@ -11,7 +12,7 @@ PKGS := $(foreach pkg, $(sort $(dir $(SRCS))), $(pkg))
 TESTARGS ?=
 
 default:
-	go build -v
+	LDFLAGS=$(LDFLAGS) go build -v -o ./ahoy
 
 install:
 	cp ahoy /usr/local/bin/ahoy
