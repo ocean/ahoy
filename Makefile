@@ -54,9 +54,11 @@ clean:
 fmtcheck:
 	$(foreach file,$(SRCS),gofmt $(file) | diff -u $(file) - || exit;)
 
-lint:
-	@ go get golang.org/x/lint/golint
-	$(foreach file,$(SRCS),golint $(file) || exit;)
+lint: staticcheck
+
+staticcheck:
+	@ go install honnef.co/go/tools/cmd/staticcheck
+	staticcheck ./...
 
 vet:
 	$(foreach pkg,$(PKGS),go vet $(pkg) || exit;)
@@ -65,10 +67,10 @@ gocyclo:
 	@ go get github.com/fzipp/gocyclo/cmd/gocyclo
 	gocyclo -over 25 -avg -ignore "vendor" .
 
-test: fmtcheck lint vet
+test: fmtcheck staticcheck vet
 	 go test *.go $(TESTARGS)
 
 version:
 	@echo $(VERSION)
 
-.PHONY: clean test fmtcheck lint vet gocyclo version testdeps cross cross_tars build_dir default install
+.PHONY: clean test fmtcheck lint staticcheck vet gocyclo version testdeps cross cross_tars build_dir default install
