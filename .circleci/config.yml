@@ -18,14 +18,8 @@ jobs:
       - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.46.2
       # - run: sudo apt search php
       # - run: sudo apt install php
-      - run: |
-          pwd
-          ls -al
-          ls -al /home/circleci/go/src/github.com
-          ls -al /home/circleci/go/src/github.com/ahoy-cli/ahoy
       - go/load-cache
       - go/mod-download
-      - run: go get -u golang.org/x/lint/golint
       - run:
           name: Get Go modules
           command: |
@@ -41,5 +35,9 @@ jobs:
       #     env
       #     echo $GOPATH
       #     /home/circleci/go/bin/golangci-lint run
+      - run: |
+          pwd
+          ls -al
+          ls -al /home/circleci/go/src/github.com/ahoy-cli/ahoy
       - run: make test
       - run: ./ahoy test
