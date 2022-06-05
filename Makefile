@@ -54,17 +54,15 @@ clean:
 fmtcheck:
 	$(foreach file,$(SRCS),gofmt $(file) | diff -u $(file) - || exit;)
 
-lint: staticcheck
-
 staticcheck:
-	@ go install honnef.co/go/tools/cmd/staticcheck
+	@ go install honnef.co/go/tools/cmd/staticcheck@latest
 	staticcheck ./...
 
 vet:
 	$(foreach pkg,$(PKGS),go vet $(pkg) || exit;)
 
 gocyclo:
-	@ go get github.com/fzipp/gocyclo/cmd/gocyclo
+	@ go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
 	gocyclo -over 25 -avg -ignore "vendor" .
 
 test: fmtcheck staticcheck vet
@@ -73,4 +71,4 @@ test: fmtcheck staticcheck vet
 version:
 	@echo $(VERSION)
 
-.PHONY: clean test fmtcheck lint staticcheck vet gocyclo version testdeps cross cross_tars build_dir default install
+.PHONY: clean test fmtcheck staticcheck vet gocyclo version testdeps cross cross_tars build_dir default install
