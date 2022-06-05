@@ -30,7 +30,6 @@ commands:
   test:
     usage: Run automated tests.
     cmd: |
-      ahoy build
       FAIL=false
       TESTS=(
         'go vet'
