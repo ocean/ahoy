@@ -26,7 +26,12 @@ jobs:
       - go/load-cache
       - go/mod-download
       - run: go get -u golang.org/x/lint/golint
-      - run: go mod vendor
+      - run:
+          name: Get Go modules
+          command: |
+            go mod tidy
+            go mod vendor
+            go mod verify
       - go/save-cache
       # - run: bash build.sh -v
       - run: |
@@ -36,5 +41,5 @@ jobs:
       #     env
       #     echo $GOPATH
       #     /home/circleci/go/bin/golangci-lint run
+      - run: make test
       - run: ./ahoy test
-      - go/test
