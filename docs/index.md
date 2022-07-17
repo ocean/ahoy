@@ -2,40 +2,43 @@
 
 # AHOY! - Automate and organize your workflows, no matter what technology you use.
 
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/ahoy-cli/ahoy/tree/master.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/ahoy-cli/ahoy/tree/master) [![Go Report Card](https://goreportcard.com/badge/github.com/ahoy-cli/ahoy)](https://goreportcard.com/report/github.com/ahoy-cli/ahoy)
+
 ### Note: Ahoy 2.x is now released and is the only supported version.
 
-Ahoy is command line tool that gives each of your projects their own CLI app with with zero code and dependencies. 
+Ahoy is command line tool that gives each of your projects their own CLI app with zero code and dependencies.
 
-Simply write your commands in a yaml file and ahoy gives you lots of features like:
+Write your commands in a YAML file and then Ahoy gives you lots of features like:
 * a command listing
 * per-command help text
 * command tab completion
 * run commands from any subdirectory
 
-Essentially, ahoy makes is easy to create aliases and templates for commands that are useful. It was specifically created to help with running interactive commands within docker containers, but it's just as useful for local commands, commands over ssh, or really anything that could be run from the command line in a single clean interface.
+Ahoy makes it easy to create aliases and templates for commands that are useful. It was created to help with running interactive commands within Docker containers, but it's just as useful for local commands, commands over `ssh`, or really anything that could be run from the command line in a single clean interface.
 
 ## Examples
 
-Say you want to import a sql database running in docker-compose using another container called cli. The command could look like this:
+Say you want to import a MySQL database running in `docker-compose` using another container called `cli`. The command could look like this:
 
 `docker exec -i $(docker-compose ps -q cli) bash -c 'mysql -u$DB_ENV_MYSQL_USER -p$DB_ENV_MYSQL_PASSWORD -h$DB_PORT_3306_TCP_ADDR $DB_ENV_MYSQL_DATABASE' < some-database.sql`
 
-With ahoy, you can turn this into
+With Ahoy, you can turn this into:
 
 `ahoy mysql-import < some-database.sql`
 
-[More examples](Home.md)
+[More examples](Home.html).
 
-## FEATURES
+## Features
+
 - Non-invasive - Use your existing workflow! It can wrap commands and scripts you are already using.
-- Consistent - Commands always run relative to the .ahoy.yml file, but can be called from any subfolder.
-- Visual - See a list of all of your commands in one place, along with helpful descriptions.
-- Flexible - Commands are specific to a single folder tree, so each repo/workspace can have its own commands
-- Command Templates - Args can be dropped into your commands using `{{args}}`
-- Fully interactive - your shells (like MySQL) and prompts still work.
-- Self-documenting - Commands and help declared in .ahoy.yml show up as ahoy command help and shell completion of commands (see [bash/zsh completion](#bash-zsh-completion)).
+- Consistent - Commands always run relative to the `.ahoy.yml` file, but can be called from any subfolder.
+- Visual - See a list of all your commands in one place, along with helpful descriptions.
+- Flexible - Commands are specific to a single folder tree, so each repo/workspace can have its own commands.
+- Command templates - Args can be dropped into your commands using `{{args}}`
+- Fully interactive - Your shells (like MySQL) and prompts still work.
+- Self-documenting - Commands and help declared in `.ahoy.yml` show up as ahoy command help and shell completion of commands (see [bash/zsh completion](#bash-zsh-completion)) is also available.
 
-## INSTALLATION
+## Installation
 
 ### macOS
 
@@ -45,27 +48,39 @@ Using Homebrew:
 brew install ahoy
 ```
 
+Note that `ahoy` is in `homebrew-core` as of 1/18/19, so you don't need to use the old tap.
+If you were previously using it, you can use the following command to remove it:
+
+```
+brew untap ahoy-cli/tap
+```
+
 ### Linux
 
-Download and unzip the latest release and move the appropriate binary for your plaform into someplace in your $PATH and rename it `ahoy`.
+Download the [latest release from GitHub](https://github.com/ahoy-cli/ahoy/releases), move the appropriate binary for your plaform into someplace in your $PATH and rename it `ahoy`.
 
 Example:
 ```
-os=$(uname -s | tr [:upper:] [:lower:]) && architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) && sudo wget -q https://github.com/ahoy-cli/ahoy/releases/download/2.0.0/ahoy-bin-$os-$architecture -O /usr/local/bin/ahoy && sudo chown $USER /usr/local/bin/ahoy && chmod +x /usr/local/bin/ahoy
+os=$(uname -s | tr [:upper:] [:lower:]) && architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) && sudo wget -q https://github.com/ahoy-cli/ahoy/releases/download/2.0.1/ahoy-bin-$os-$architecture -O /usr/local/bin/ahoy && sudo chown $USER /usr/local/bin/ahoy && chmod +x /usr/local/bin/ahoy
 ```
 
-### Bash / Zsh Completion
+### Windows
+
+For WSL2, use the Linux binary above for your architecture.
+
+## Shell Completion (for Bash / Zsh currently)
+
 For Zsh, Just add this to your `~/.zshrc`, and your completions will be relative to the directory you're in.
 
 `complete -F "ahoy --generate-bash-completion" ahoy`
 
-For Bash, you'll need to make sure you have bash-completion installed and setup. On OSX with homebrew it looks like this:
+For Bash, you'll need to make sure you have `bash-completion` installed and setup. On macOS with `homebrew` it looks like this:
 
 `brew install bash bash-completion`
 
-Now make sure you follow the couple installation instructions in the "Caveats" section that homebrew returns. And make sure completion is working for git for instance before you continue (you may need to restart your shell)
+Now make sure you follow the installation instructions in the "Caveats" section that `homebrew` returns. And make sure completion is working for something, e.g. `git`, before you continue (you may need to restart your shell).
 
-Then, (for homebrew) you'll want to create a file at `/usr/local/etc/bash_completion.d/ahoy` with the following:
+Then, (for `homebrew`) you'll want to create a file at `/usr/local/etc/bash_completion.d/ahoy` with the following:
 
 ```Bash
 #! /bin/bash
@@ -84,10 +99,11 @@ _cli_bash_autocomplete() {
  complete -F _cli_bash_autocomplete $PROG
 ```
 
-restart your shell, and you should see ahoy autocomplete when typing `ahoy [TAB]`
+Restart your shell, and you should see `ahoy` autocomplete when typing `ahoy [TAB]`
 
-## USAGE
-Almost all the commands are actually specified in a `.ahoy.yml` file placed in your working tree somewhere. Commands that are added there show up as options in ahoy. Here is what it looks like when using the [example.ahoy.yml file](https://github.com/ahoy-cli/ahoy/blob/master/examples/examples.ahoy.yml). To start with this file locally you can run `ahoy init`.
+## Usage
+
+Almost all the commands are actually specified in an `.ahoy.yml` file placed in your working tree somewhere. Commands that are added there show up as options in ahoy. Here is what it looks like when using the [example.ahoy.yml file](https://github.com/ahoy-cli/ahoy/blob/master/examples/examples.ahoy.yml). To start with this file locally you can run `ahoy init`.
 
 ```
 $ ahoy
@@ -121,21 +137,12 @@ GLOBAL OPTIONS:
    --version, -v    print the version
 ```
 
-## Version 2
-
-All new features are being added to the v2 (master) branch of ahoy which is still in alpha and will have breaking changes with v1 ahoy files, so to use ahoy v2, you'll need to do the following: 
-- Upgrade to the ahoy v2 binary which currently needs to be compiled from source. If you are using homebrew, you can use that to upgrade to v2 using the following:
-```
-  brew uninstall ahoy # Required or you'll get errors 
-  brew upgrade # Updates the tap
-  brew install ahoy --HEAD # Installs ahoy by compiling the latest from the master branch
-  ahoy # You should see full version that you're using.
-```
-- Change your `ahoyapi: v1` lines to `ahoyapi: v2`
-
 ### New Features in v2
-- Implements a new feature to import mulitple config files using the "imports" field.
+- Implements a new feature to import multiple config files using the "imports" field.
 - Uses the "last in wins" rule to deal with duplicate commands amongst the config files.
+- Better handling of quotes by no longer using `{{args}}`. Use regular bash syntax like `"$@"` for all arguments, or `$1` for the first argument.
+- You can now use a different entrypoint (the thing that runs your commands) instead of bash. Ex. using PHP, Node.js, Python, etc.
+- Plugins are now possible by overriding the entrypoint.
 
 ```
 commands:
@@ -152,10 +159,3 @@ commands:
 - Do specific arg replacement like {{arg1}} and enable specifying specific arguments and flags in the ahoy file itself to cut down on parsing arguments in scripts.
 - Support for more built-in commands or a "verify" yaml option that would create a yes / no prompt for potentially destructive commands. (Are you sure you want to delete all your containers?)
 - Pipe tab completion to another command (allows you to get tab completion)
-
-### Some `mkdocs` commands
-
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
