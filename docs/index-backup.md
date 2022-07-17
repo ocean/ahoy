@@ -24,7 +24,7 @@ With ahoy, you can turn this into
 
 `ahoy mysql-import < some-database.sql`
 
-[More examples](Home.md)
+[More examples](Home.html)
 
 ## FEATURES
 - Non-invasive - Use your existing workflow! It can wrap commands and scripts you are already using.
@@ -87,7 +87,7 @@ _cli_bash_autocomplete() {
 restart your shell, and you should see ahoy autocomplete when typing `ahoy [TAB]`
 
 ## USAGE
-Almost all the commands are actually specified in a `.ahoy.yml` file placed in your working tree somewhere. Commands that are added there show up as options in ahoy. Here is what it looks like when using the [example.ahoy.yml file](https://github.com/ahoy-cli/ahoy/blob/master/examples/examples.ahoy.yml). To start with this file locally you can run `ahoy init`.
+Almost all the commands are actually specified in a .ahoy.yml file placed in your working tree somewhere. Commands that are added there show up as options in ahoy. Here is what it looks like when using the [example.ahoy.yml file](https://github.com/ahoy-cli/ahoy/blob/master/examples/examples.ahoy.yml). To start with this file locally you can run `ahoy init`.
 
 ```
 $ ahoy
@@ -152,10 +152,3 @@ commands:
 - Do specific arg replacement like {{arg1}} and enable specifying specific arguments and flags in the ahoy file itself to cut down on parsing arguments in scripts.
 - Support for more built-in commands or a "verify" yaml option that would create a yes / no prompt for potentially destructive commands. (Are you sure you want to delete all your containers?)
 - Pipe tab completion to another command (allows you to get tab completion)
-
-### Some `mkdocs` commands
-
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.

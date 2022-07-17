@@ -2,10 +2,10 @@ Welcome to the ahoy wiki!
 
 
 ## Ahoy command snippets examples
-* [Basic Tips and Troubleshooting](Basic-Tips-and-Troubleshooting.html)
-* [Confirmation](Confirmation.html)
-* [Controlling Execution](Controlling-Execution.html)
-* [Multiple line commands](Multiple-line-commands.html)
+* [Basic Tips and Troubleshooting](Basic-Tips-and-Troubleshooting.md)
+* [Confirmation](Confirmation.md)
+* [Controlling Execution](Controlling-Execution.md)
+* [Multiple line commands](Multiple-line-commands.md)
 
 ## Basics
 The simplest way to start using ahoy is to create a basic .ahoy.yml file in your current directory like so:
