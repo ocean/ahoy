@@ -458,8 +458,8 @@ VERSION:
 	return app
 }
 
-func main() {
-	logger("debug", "main()")
-	app = setupApp(os.Args[1:])
-	app.Run(os.Args)
-}
+// func main() {
+// 	logger("debug", "main()")
+// 	app = setupApp(os.Args[1:])
+// 	app.Run(os.Args)
+// }
