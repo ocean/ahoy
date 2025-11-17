@@ -471,6 +471,15 @@ func NoArgsAction(cmd *cobra.Command, args []string) {
 
 // BeforeCommand runs before every command so arguments or flags must be passed
 func BeforeCommand(cmd *cobra.Command, args []string) error {
+	// Check if version was set via -version (single dash) in initFlags
+	if versionFlagSet {
+		if version != "" {
+			fmt.Println(version)
+		}
+		os.Exit(0)
+	}
+
+	// Check if version was set via --version (double dash) by cobra
 	versionRequested, _ := cmd.Flags().GetBool("version")
 	if versionRequested {
 		if version != "" {
@@ -479,6 +488,22 @@ func BeforeCommand(cmd *cobra.Command, args []string) error {
 		os.Exit(0)
 	}
 
+	// Check if help was set via -help (single dash) in initFlags
+	if helpFlagSet {
+		if len(args) > 0 {
+			// Find the subcommand and show its help
+			for _, subcmd := range cmd.Commands() {
+				if subcmd.Name() == args[0] {
+					subcmd.Help()
+					os.Exit(0)
+				}
+			}
+		}
+		cmd.Help()
+		os.Exit(0)
+	}
+
+	// Check if help was set via --help (double dash) by cobra
 	helpRequested, _ := cmd.Flags().GetBool("help")
 	if helpRequested {
 		if len(args) > 0 {
@@ -626,6 +651,20 @@ ALIASES:
 func main() {
 	logger("debug", "main()")
 	rootCmd = setupApp(os.Args[1:])
+
+	// Check for -version and -help flags set during initFlags (single-dash versions)
+	// This handles single-dash versions that cobra doesn't support
+	if versionFlagSet {
+		if version != "" {
+			fmt.Println(version)
+		}
+		os.Exit(0)
+	}
+
+	if helpFlagSet {
+		rootCmd.Help()
+		os.Exit(0)
+	}
 
 	// Temporarily suppress stderr to capture cobra's error output
 	oldStderr := os.Stderr

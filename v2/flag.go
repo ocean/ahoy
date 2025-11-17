@@ -7,10 +7,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+var versionFlagSet bool
+var helpFlagSet bool
+
 func initFlags(incomingFlags []string) {
 	// Reset the sourcedir for when we're testing. Otherwise the global state
 	// is preserved between the tests.
 	AhoyConf.srcDir = ""
+
+	// Reset flag detection
+	versionFlagSet = false
+	helpFlagSet = false
 
 	// Normalize flags to single dash for parsing (convert --foo to -foo)
 	// This is needed because Go's standard flag package doesn't support double dash
@@ -41,6 +48,10 @@ func initFlags(incomingFlags []string) {
 
 	// Silently parse the flags - errors will be handled by cobra
 	tempFlags.Parse(normalizedFlags)
+
+	// Store whether version/help were requested
+	versionFlagSet = versionFlag
+	helpFlagSet = helpFlag
 
 	// Update viper with parsed values
 	if sourcefile != "" {
