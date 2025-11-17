@@ -3,56 +3,32 @@ package main
 import (
 	"flag"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/viper"
 )
-
-var globalFlags = []cli.Flag{
-	cli.BoolFlag{
-		Name:        "verbose, v",
-		Usage:       "Output extra details like the commands to be run.",
-		EnvVar:      "AHOY_VERBOSE",
-		Destination: &verbose,
-	},
-	cli.StringFlag{
-		Name:        "file, f",
-		Usage:       "Use a specific ahoy file.",
-		Destination: &sourcefile,
-	},
-	cli.BoolFlag{
-		Name:  "help, h",
-		Usage: "show help",
-	},
-	cli.BoolFlag{
-		Name:  "version",
-		Usage: "print the version",
-	},
-	cli.BoolFlag{
-		Name: "generate-bash-completion",
-	},
-}
-
-func flagSet(name string, flags []cli.Flag) *flag.FlagSet {
-	set := flag.NewFlagSet(name, flag.ContinueOnError)
-
-	for _, f := range flags {
-		f.Apply(set)
-	}
-	return set
-}
 
 func initFlags(incomingFlags []string) {
 	// Reset the sourcedir for when we're testing. Otherwise the global state
 	// is preserved between the tests.
 	AhoyConf.srcDir = ""
 
-	// Grab the global flags first ourselves so we can customize the yaml file loaded.
-	// Flags are only parsed once, so we need to do this before cli has the chance to?
-	tempFlags := flagSet("tempFlags", globalFlags)
-	tempFlags.Parse(incomingFlags)
-}
+	// Parse the incoming flags using Go's standard flag package
+	// This is needed for compatibility with the test suite and to
+	// parse flags before cobra initialization
+	tempFlags := flag.NewFlagSet("tempFlags", flag.ContinueOnError)
+	tempFlags.StringVar(&sourcefile, "f", "", "specify the sourcefile")
+	tempFlags.StringVar(&sourcefile, "file", "", "specify the sourcefile")
+	tempFlags.BoolVar(&verbose, "v", false, "verbose output")
+	tempFlags.BoolVar(&verbose, "verbose", false, "verbose output")
+	tempFlags.BoolVar(&bashCompletion, "generate-bash-completion", false, "")
 
-func overrideFlags(app *cli.App) {
-	app.Flags = globalFlags
-	app.HideVersion = true
-	app.HideHelp = true
+	// Silently parse the flags - errors will be handled by cobra
+	tempFlags.Parse(incomingFlags)
+
+	// Update viper with parsed values
+	if sourcefile != "" {
+		viper.Set("file", sourcefile)
+	}
+	if verbose {
+		viper.Set("verbose", verbose)
+	}
 }

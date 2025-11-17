@@ -118,7 +118,7 @@ commands:
 		t.Error("Failed: expect that two commands with the same name get merged into one.", actual)
 	}
 
-	if len(actual) > 0 && actual[0].Usage != "test-command b" {
+	if len(actual) > 0 && actual[0].Short != "test-command b" {
 		t.Error("Failed: expect that when multiple commands are merged, last one wins.", actual)
 	}
 
@@ -237,15 +237,49 @@ func TestGetConfigPathErrorOnBogusPath(t *testing.T) {
 
 func appRun(args []string) (string, error) {
 	stdout := os.Stdout
+	stderr := os.Stderr
 	r, w, _ := os.Pipe()
+	rErr, wErr, _ := os.Pipe()
 	os.Stdout = w
+	os.Stderr = wErr
 
-	setupApp(args[1:])
-	app.Run(args)
+	cmd := setupApp(args[1:])
+	// Don't call SetArgs again - setupApp already parsed the flags
+	// Just set the args to the command args (after flags)
+
+	// Find where the command starts (after all flags)
+	cmdArgs := []string{}
+	skipNext := false
+	for i, arg := range args[1:] {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		if arg == "-f" || arg == "--file" {
+			skipNext = true
+			continue
+		}
+		if arg == "-v" || arg == "--verbose" {
+			continue
+		}
+		// This is a command or command argument
+		cmdArgs = append(cmdArgs, args[1+i:]...)
+		break
+	}
+
+	cmd.SetArgs(cmdArgs)
+	cmd.Execute()
 
 	w.Close()
-	//@aashil thinks this reads from the command line
+	wErr.Close()
 	out, _ := io.ReadAll(r)
+	errOut, _ := io.ReadAll(rErr)
 	os.Stdout = stdout
+	os.Stderr = stderr
+
+	// If there was an error output, include it
+	if len(errOut) > 0 {
+		return string(out), fmt.Errorf("%s", errOut)
+	}
 	return string(out), nil
 }
