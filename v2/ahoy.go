@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -248,10 +249,14 @@ func getCommands(config Config) []*cobra.Command {
 		}
 
 		newCmd := &cobra.Command{
-			Use:                name,
-			Aliases:            cmd.Aliases,
-			DisableFlagParsing: true,
-			Hidden:             cmd.Hide,
+			Use:     name,
+			Aliases: cmd.Aliases,
+			// Don't use DisableFlagParsing - it prevents persistent flags from being parsed
+			// Instead, we'll use FParseErrWhitelist to allow unknown flags to pass through
+			FParseErrWhitelist: cobra.FParseErrWhitelist{
+				UnknownFlags: true,
+			},
+			Hidden: cmd.Hide,
 		}
 
 		if cmd.Usage != "" {
@@ -437,6 +442,12 @@ func BashComplete(cmd *cobra.Command, args []string, toComplete string) ([]strin
 // are passed or when a command doesn't exist.
 func NoArgsAction(cmd *cobra.Command, args []string) {
 	if len(args) > 0 {
+		// If there's no config file, we can't run any commands
+		if AhoyConf.srcFile == "" {
+			msg := "Command not found for '" + strings.Join(args, " ") + "'"
+			logger("fatal", msg)
+		}
+		// Otherwise, cobra will handle the unknown command error
 		msg := "Command not found for '" + strings.Join(args, " ") + "'"
 		logger("fatal", msg)
 	}
@@ -462,8 +473,10 @@ func NoArgsAction(cmd *cobra.Command, args []string) {
 func BeforeCommand(cmd *cobra.Command, args []string) error {
 	versionRequested, _ := cmd.Flags().GetBool("version")
 	if versionRequested {
-		fmt.Println(version)
-		return errors.New("don't continue with commands")
+		if version != "" {
+			fmt.Println(version)
+		}
+		os.Exit(0)
 	}
 
 	helpRequested, _ := cmd.Flags().GetBool("help")
@@ -473,12 +486,12 @@ func BeforeCommand(cmd *cobra.Command, args []string) error {
 			for _, subcmd := range cmd.Commands() {
 				if subcmd.Name() == args[0] {
 					subcmd.Help()
-					return errors.New("don't continue with commands")
+					os.Exit(0)
 				}
 			}
 		}
 		cmd.Help()
-		return errors.New("don't continue with commands")
+		os.Exit(0)
 	}
 	return nil
 }
@@ -556,6 +569,18 @@ func setupApp(localArgs []string) *cobra.Command {
 	// Set up custom help template
 	rootCmd.SetHelpFunc(customHelpFunc)
 
+	// Disable cobra's default unknown command behavior and use custom error handling
+	rootCmd.SilenceErrors = true
+	rootCmd.SilenceUsage = true
+
+	// Set custom function for handling unknown commands
+	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
+		if strings.Contains(err.Error(), "unknown command") || strings.Contains(err.Error(), "unknown flag") {
+			return err // Let main() handle it
+		}
+		return err
+	})
+
 	return rootCmd
 }
 
@@ -601,7 +626,42 @@ ALIASES:
 func main() {
 	logger("debug", "main()")
 	rootCmd = setupApp(os.Args[1:])
-	if err := rootCmd.Execute(); err != nil {
+
+	// Temporarily suppress stderr to capture cobra's error output
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	err := rootCmd.Execute()
+
+	// Restore stderr
+	w.Close()
+	os.Stderr = oldStderr
+
+	// Read what was written to stderr
+	stderrOutput, _ := io.ReadAll(r)
+
+	if err != nil {
+		// Check if it's an unknown command error
+		if strings.Contains(err.Error(), "unknown command") {
+			// Extract the command name from the error message
+			// Format: "unknown command \"something\" for \"ahoy\""
+			parts := strings.Split(err.Error(), "\"")
+			if len(parts) >= 2 {
+				cmdName := parts[1]
+				msg := "Command not found for '" + cmdName + "'"
+				logger("fatal", msg)
+			}
+		}
+		// If it's another error, print what was captured and exit
+		if len(stderrOutput) > 0 {
+			fmt.Fprint(oldStderr, string(stderrOutput))
+		}
 		os.Exit(1)
+	}
+
+	// If there was output to stderr but no error, print it
+	if len(stderrOutput) > 0 {
+		fmt.Fprint(oldStderr, string(stderrOutput))
 	}
 }
