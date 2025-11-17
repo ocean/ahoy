@@ -428,9 +428,7 @@ func BashComplete(cmd *cobra.Command, args []string, toComplete string) ([]strin
 	completions := []string{}
 	for _, command := range cmd.Root().Commands() {
 		completions = append(completions, command.Name())
-		for _, alias := range command.Aliases {
-			completions = append(completions, alias)
-		}
+		completions = append(completions, command.Aliases...)
 	}
 	return completions, cobra.ShellCompDirectiveNoFileComp
 }
