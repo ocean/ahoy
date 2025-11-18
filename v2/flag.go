@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"strings"
 
@@ -9,6 +10,8 @@ import (
 
 var versionFlagSet bool
 var helpFlagSet bool
+var bashCompletionFlagSet bool
+var invalidFlagError string
 
 func initFlags(incomingFlags []string) {
 	// Reset the sourcedir for when we're testing. Otherwise the global state
@@ -18,6 +21,8 @@ func initFlags(incomingFlags []string) {
 	// Reset flag detection
 	versionFlagSet = false
 	helpFlagSet = false
+	bashCompletionFlagSet = false
+	invalidFlagError = ""
 
 	// Normalize flags to single dash for parsing (convert --foo to -foo)
 	// This is needed because Go's standard flag package doesn't support double dash
@@ -34,24 +39,34 @@ func initFlags(incomingFlags []string) {
 	// This is needed for compatibility with the test suite and to
 	// parse flags before cobra initialization
 	tempFlags := flag.NewFlagSet("tempFlags", flag.ContinueOnError)
+
+	// Capture error output to check for invalid flags
+	var errBuf bytes.Buffer
+	tempFlags.SetOutput(&errBuf)
+
 	tempFlags.StringVar(&sourcefile, "f", "", "specify the sourcefile")
 	tempFlags.StringVar(&sourcefile, "file", "", "specify the sourcefile")
 	tempFlags.BoolVar(&verbose, "v", false, "verbose output")
 	tempFlags.BoolVar(&verbose, "verbose", false, "verbose output")
 
 	// Add version and help flags that will be handled by cobra
-	var versionFlag, helpFlag bool
+	var versionFlag, helpFlag, bashCompletionFlag bool
 	tempFlags.BoolVar(&versionFlag, "version", false, "print version")
 	tempFlags.BoolVar(&helpFlag, "help", false, "print help")
 	tempFlags.BoolVar(&helpFlag, "h", false, "print help")
-	tempFlags.BoolVar(&bashCompletion, "generate-bash-completion", false, "")
+	tempFlags.BoolVar(&bashCompletionFlag, "generate-bash-completion", false, "")
 
-	// Silently parse the flags - errors will be handled by cobra
-	tempFlags.Parse(normalizedFlags)
+	// Parse the flags - capture any errors for invalid flags
+	err := tempFlags.Parse(normalizedFlags)
+	if err != nil {
+		// Store the error message for later (invalid flag handling)
+		invalidFlagError = errBuf.String()
+	}
 
-	// Store whether version/help were requested
+	// Store whether version/help/bash-completion were requested
 	versionFlagSet = versionFlag
 	helpFlagSet = helpFlag
+	bashCompletionFlagSet = bashCompletionFlag
 
 	// Update viper with parsed values
 	if sourcefile != "" {

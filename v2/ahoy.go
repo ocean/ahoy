@@ -652,6 +652,13 @@ func main() {
 	logger("debug", "main()")
 	rootCmd = setupApp(os.Args[1:])
 
+	// Check for invalid flag error from initFlags - show help and exit 0 for better UX
+	if invalidFlagError != "" {
+		fmt.Print(invalidFlagError)
+		rootCmd.Help()
+		os.Exit(0)
+	}
+
 	// Check for -version and -help flags set during initFlags (single-dash versions)
 	// This handles single-dash versions that cobra doesn't support
 	if versionFlagSet {
@@ -663,6 +670,16 @@ func main() {
 
 	if helpFlagSet {
 		rootCmd.Help()
+		os.Exit(0)
+	}
+
+	// Handle bash completion flag - print completions and exit
+	if bashCompletionFlagSet {
+		for _, command := range rootCmd.Commands() {
+			if !command.Hidden {
+				fmt.Println(command.Name())
+			}
+		}
 		os.Exit(0)
 	}
 
