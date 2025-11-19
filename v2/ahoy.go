@@ -43,10 +43,9 @@ type Command struct {
 }
 
 var (
-	rootCmd        *cobra.Command
-	sourcefile     string
-	verbose        bool
-	bashCompletion bool
+	rootCmd    *cobra.Command
+	sourcefile string
+	verbose    bool
 )
 
 // The build version can be set using the go linker flag `-ldflags "-X main.version=$VERSION"`
