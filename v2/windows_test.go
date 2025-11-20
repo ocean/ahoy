@@ -167,10 +167,10 @@ func TestWindowsCommandExecution(t *testing.T) {
 	// Check that the command was created correctly
 	found := false
 	for _, cmd := range commands {
-		if cmd.Name == "windows-test" {
+		if cmd.Name() == "windows-test" {
 			found = true
-			if cmd.Usage != "Test Windows command execution" {
-				t.Errorf("Expected usage 'Test Windows command execution', got '%s'", cmd.Usage)
+			if cmd.Short != "Test Windows command execution" {
+				t.Errorf("Expected usage 'Test Windows command execution', got '%s'", cmd.Short)
 			}
 		}
 	}
