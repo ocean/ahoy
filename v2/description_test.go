@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/cobra"
+	"github.com/urfave/cli"
 )
 
 func TestDescriptionParsing(t *testing.T) {
@@ -74,9 +74,9 @@ func TestDescriptionInCLICommands(t *testing.T) {
 	commands := getCommands(config)
 
 	// Create a map for easy lookup
-	cmdMap := make(map[string]*cobra.Command)
+	cmdMap := make(map[string]cli.Command)
 	for _, cmd := range commands {
-		cmdMap[cmd.Name()] = cmd
+		cmdMap[cmd.Name] = cmd
 	}
 
 	tests := []struct {
@@ -113,12 +113,12 @@ func TestDescriptionInCLICommands(t *testing.T) {
 				t.Fatalf("CLI command %s not found", test.command)
 			}
 
-			if cmd.Short != test.expectUsage {
-				t.Errorf("CLI Usage mismatch for %s: expected %q, got %q", test.command, test.expectUsage, cmd.Short)
+			if cmd.Usage != test.expectUsage {
+				t.Errorf("CLI Usage mismatch for %s: expected %q, got %q", test.command, test.expectUsage, cmd.Usage)
 			}
 
-			if cmd.Long != test.expectDesc {
-				t.Errorf("CLI Description mismatch for %s: expected %q, got %q", test.command, test.expectDesc, cmd.Long)
+			if cmd.Description != test.expectDesc {
+				t.Errorf("CLI Description mismatch for %s: expected %q, got %q", test.command, test.expectDesc, cmd.Description)
 			}
 		})
 	}
@@ -174,10 +174,10 @@ func TestDescriptionWithExistingCommands(t *testing.T) {
 
 			// Verify CLI command assignment
 			commands := getCommands(config)
-			var cliCmd *cobra.Command
+			var cliCmd *cli.Command
 			for _, c := range commands {
-				if c.Name() == test.command {
-					cliCmd = c
+				if c.Name == test.command {
+					cliCmd = &c
 					break
 				}
 			}
@@ -186,12 +186,12 @@ func TestDescriptionWithExistingCommands(t *testing.T) {
 				t.Fatalf("CLI command %s not found", test.command)
 			}
 
-			if test.hasUsage && cliCmd.Short != cmd.Usage {
-				t.Errorf("CLI Usage not assigned correctly for %s: expected %q, got %q", test.command, cmd.Usage, cliCmd.Short)
+			if test.hasUsage && cliCmd.Usage != cmd.Usage {
+				t.Errorf("CLI Usage not assigned correctly for %s: expected %q, got %q", test.command, cmd.Usage, cliCmd.Usage)
 			}
 
-			if test.hasDesc && cliCmd.Long != cmd.Description {
-				t.Errorf("CLI Description not assigned correctly for %s: expected %q, got %q", test.command, cmd.Description, cliCmd.Long)
+			if test.hasDesc && cliCmd.Description != cmd.Description {
+				t.Errorf("CLI Description not assigned correctly for %s: expected %q, got %q", test.command, cmd.Description, cliCmd.Description)
 			}
 		})
 	}
