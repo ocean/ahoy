@@ -12,7 +12,7 @@ else
     BINARY_NAME := ahoy
 endif
 
-SRCS = $(shell find . -name '*.go' | grep -E -v '^./vendor/')
+SRCS = $(shell find . -name '*.go' | grep -v '/vendor/')
 
 OS := linux darwin windows
 ARCH := amd64 arm64
