@@ -7,7 +7,7 @@ commands:
       information automatically embedded.
 
       This creates a snapshot build with proper version flags and
-      optimisation.
+      optimization.
       The binary will be created in the dist directory.
     cmd: goreleaser build --config ../.goreleaser.yml --snapshot --clean --single-target
 
@@ -16,7 +16,8 @@ commands:
     description: |
       Builds ahoy for all supported platforms (linux, darwin, windows) and
       architectures (amd64, arm64, arm) using Goreleaser configuration.
-      Creates optimised binaries for distribution with proper naming and
+
+      Creates optimized binaries for distribution with proper naming and
       packaging.
     cmd: goreleaser build --config ../.goreleaser.yml --snapshot --clean
 
@@ -24,6 +25,7 @@ commands:
     usage: Install ahoy locally using go install.
     description: |
       Installs ahoy directly to your GOPATH/bin using go install.
+
       This is useful for development but doesn't include version information
       that Goreleaser builds provide.
     cmd: "go install"
@@ -32,6 +34,7 @@ commands:
     usage: "Run the BATS bash testing command."
     description: |
       Executes the BATS (Bash Automated Testing System) test suite.
+
       This runs integration tests that verify ahoy's command-line behavior
       and functionality across different scenarios.
     cmd: |
@@ -44,6 +47,7 @@ commands:
       - Go vet for code quality checks
       - Go unit tests with race detection
       - BATS integration tests for command-line behavior
+
       Stops on first failure and reports overall results.
     cmd: |
       set -euo pipefail
@@ -75,6 +79,7 @@ commands:
     description: |
       Automatically formats all Go source files in the current directory
       according to Go's standard formatting rules.
+
       This ensures consistent code style across the project.
     cmd: gofmt -w .
 
@@ -85,30 +90,15 @@ commands:
       - Building for all platforms and architectures
       - Generating checksums and SBOMs
       - Creating archives and signing artifacts
+
       Requires proper git tags and GPG setup for signing.
     cmd: goreleaser release --config ../.goreleaser.yml --clean
 
-  echo:
-    usage: Display a message
+  cowsay:
+    usage: A cow says something (fun demo command).
     description: |
-      This is a simple command that echoes any arguments passed to it.
-      Useful for testing and basic output.
-    cmd: echo "$@"
+      Displays a cow saying whatever message you provide.
 
-  list:
-    usage: List directory contents
-    description: |
-      Lists all files and directories in the specified location.
-
-      Shows hidden files (starting with .) and supports all standard
-      ls options.
-
-      If no directory is specified, lists the current directory.
-    cmd: ls -a "$@"
-
-  whalesay:
-    usage: Make a whale say something
-    description: |
-      Uses Docker to run the whalesay container with a dragon figure to
-      display your message in ASCII art.
-    cmd: docker run --rm docker/whalesay cowsay -f dragon "$@"
+      This is a demonstration command showing how ahoy can wrap
+      external tools and pass arguments through.
+    cmd: cowsay "$@"
