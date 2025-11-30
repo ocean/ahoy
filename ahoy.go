@@ -63,7 +63,7 @@ func logger(errType string, text string) {
 	// Disable the flags which add date and time for instance.
 	log.SetFlags(0)
 	if errType != "debug" {
-		errText = "[" + errType + "] " + text + "\n"
+		errText = "[" + errType + "] " + text
 		log.Println(errText)
 	}
 

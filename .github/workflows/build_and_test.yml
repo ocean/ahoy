@@ -11,10 +11,16 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        version: [v3, v2]
+        include:
+          - version: v3
+            directory: .
+          - version: v2
+            directory: ./v2
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: ./v2
+        working-directory: ${{ matrix.directory }}
 
     steps:
       - uses: actions/checkout@v4
@@ -142,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always() && runner.os != 'Windows'
         with:
-          name: test-results-${{ matrix.os }}
+          name: test-results-${{ matrix.os }}-${{ matrix.version }}
           path: /tmp/test-reports/
           retention-days: 30
 
@@ -150,6 +156,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always() && runner.os == 'Windows'
         with:
-          name: test-results-${{ matrix.os }}
+          name: test-results-${{ matrix.os }}-${{ matrix.version }}
           path: C:\tmp\test-reports\
           retention-days: 30
