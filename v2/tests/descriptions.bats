@@ -10,10 +10,10 @@ teardown() {
 
 @test "Commands with usage appear in command list" {
   run ./ahoy -f testdata/descriptions-test.ahoy.yml
-  # Usage should appear in the main command list (spacing may vary between CLI frameworks)
-  [[ "$output" =~ "simple" ]] && [[ "$output" =~ "Simple command" ]]
-  [[ "$output" =~ "multiline" ]] && [[ "$output" =~ "Multiline description test" ]]
-  [[ "$output" =~ "no-description" ]] && [[ "$output" =~ "Command without description" ]]
+  # Usage should appear in the main command list
+  [[ "$output" =~ "simple  Simple command" ]]
+  [[ "$output" =~ "multiline          Multiline description test" ]]
+  [[ "$output" =~ "no-description    Command without description" ]]
 }
 
 @test "Commands without usage still appear in command list" {
