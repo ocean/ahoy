@@ -258,7 +258,7 @@ commands:
 
 ## Sponsors 💰 👏
 
-- [<img src="https://raw.githubusercontent.com/drevops/website-static/main/img/drevops_logo_horiz_black.png" width="128px;" alt="DrevOps Logo"><br />Alex Skrypnyk - DrevOps](https://drevops.com)
+- [<img src="https://raw.githubusercontent.com/drevops/website/refs/heads/develop/web/themes/custom/drevops/assets/logos/logo_primary_light_desktop.svg?sanitize=true" width="160px;" alt="DrevOps Logo"><br />Alex Skrypnyk - DrevOps](https://drevops.com)
 
 ## Contributors ✨
 
