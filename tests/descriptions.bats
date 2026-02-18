@@ -106,6 +106,22 @@ teardown() {
   [[ "$output" =~ "empty" ]]
 }
 
+@test "Per-command --help shows help and does not execute the command" {
+  # Passing --help to a command should show help, not run the underlying cmd.
+  run ./ahoy -f testdata/simple.ahoy.yml echo --help
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "NAME:" ]]
+  [[ "$output" =~ "USAGE:" ]]
+  [[ ! "$output" =~ "test message" ]]
+}
+
+@test "Help flag after -- separator is passed through to the command" {
+  # Arguments after -- should be passed to the underlying command, not intercepted.
+  run ./ahoy -f testdata/simple.ahoy.yml echo -- --help
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ "--help" ]]
+}
+
 # Test that the main ahoy help still works with description fields present.
 @test "Main help output includes commands with descriptions" {
   run ./ahoy -f testdata/descriptions-test.ahoy.yml
