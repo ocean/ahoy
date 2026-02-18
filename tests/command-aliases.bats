@@ -18,7 +18,6 @@ load 'test_helpers/bats-assert/load'
 
   run ./ahoy -f testdata/command-aliases.ahoy.yml
   [[ "$output" =~ "hello, hi, greet" ]]
-  [[ "$output" =~ "Aliases: hi, greet" ]]
 
   # Should exit with error as no command was supplied.
   [ "$status" -eq 1 ]
