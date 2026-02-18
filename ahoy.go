@@ -344,7 +344,9 @@ func getCommands(config Config) []*cobra.Command {
 			newCmd.AddCommand(subCommands...)
 		}
 
-		// log.Println("Source file:", sourcefile, "- found command:", name, ">", cmd.Cmd)
+		// Set per-command help template to show the full description.
+		newCmd.SetHelpFunc(commandHelpFunc)
+
 		exportCmds = append(exportCmds, newCmd)
 	}
 
@@ -606,6 +608,43 @@ func setupApp(localArgs []string) *cobra.Command {
 	})
 
 	return rootCmd
+}
+
+// commandHelpFunc provides per-command help output with a DESCRIPTION section.
+func commandHelpFunc(cmd *cobra.Command, args []string) {
+	funcMap := template.FuncMap{
+		"join":      strings.Join,
+		"trimSpace": strings.TrimSpace,
+	}
+
+	helpTemplate := `NAME:
+   {{.Name}} - {{.Short}}{{if .Long}}
+
+DESCRIPTION:
+
+{{trimSpace .Long}}
+{{end}}
+USAGE:
+   {{.UseLine}} [arguments...]
+{{if .HasAvailableSubCommands}}
+COMMANDS:{{range .Commands}}{{if not .Hidden}}
+   {{.Name}}{{if .Aliases}}, {{join .Aliases ", "}}{{end}}	{{.Short}}
+{{end}}{{end}}{{end}}{{if .Aliases}}
+ALIASES:
+   {{join .Aliases ", "}}
+{{end}}
+`
+
+	w := tabwriter.NewWriter(cmd.OutOrStdout(), 1, 8, 2, ' ', 0)
+	t := template.Must(template.New("commandHelp").Funcs(funcMap).Parse(helpTemplate))
+	err := t.Execute(w, cmd)
+	if err != nil {
+		if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
+			fmt.Fprintf(cmd.ErrOrStderr(), "CLI TEMPLATE ERROR: %#v\n", err)
+		}
+		return
+	}
+	w.Flush()
 }
 
 // customHelpFunc provides custom help output with aliases support.
