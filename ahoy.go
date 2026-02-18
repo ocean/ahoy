@@ -608,31 +608,29 @@ func setupApp(localArgs []string) *cobra.Command {
 	return rootCmd
 }
 
-// customHelpFunc provides custom help output with aliases support
+// customHelpFunc provides custom help output with aliases support.
 func customHelpFunc(cmd *cobra.Command, args []string) {
 	funcMap := template.FuncMap{
-		"join":    strings.Join,
-		"replace": strings.ReplaceAll,
+		"join":      strings.Join,
+		"replace":   strings.ReplaceAll,
+		"trimSpace": strings.TrimSpace,
 	}
 
 	helpTemplate := `NAME:
    {{.Use}} - {{.Short}}
+
 USAGE:
    {{.UseLine}}{{if .HasAvailableSubCommands}} command [command options]{{end}} [arguments...]
-   {{if .HasAvailableSubCommands}}
+{{if .HasAvailableSubCommands}}
 COMMANDS:{{range .Commands}}{{if not .Hidden}}
-   {{.Name}}{{if .Aliases}}, {{join .Aliases ", "}}{{end}}{{if .HasSubCommands}} ▼{{end}}	{{.Short}}{{if .Long}}
-
-	{{replace .Long "\n" "\n\t"}}
-{{end}}{{if .Aliases}} [ Aliases: {{join .Aliases ", "}} ]{{end}}
-{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+   {{.Name}}{{if .Aliases}}, {{join .Aliases ", "}}{{end}}{{if .HasSubCommands}} ▼{{end}}	{{.Short}}
+{{end}}{{end}}
+Use 'ahoy <command> --help' for detailed information about a command.
+{{end}}{{if .HasAvailableLocalFlags}}
 GLOBAL OPTIONS:
 {{.LocalFlags.FlagUsages}}{{end}}{{if .Version}}
 VERSION:
    {{.Version}}{{end}}
-ALIASES:
-    Commands can have aliases for easier invocation. Aliases are displayed next to each command that has them.
-    You can use any of a command's aliases interchangeably with its primary name.
 `
 
 	w := tabwriter.NewWriter(cmd.OutOrStdout(), 1, 8, 2, ' ', 0)
