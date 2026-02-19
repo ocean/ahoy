@@ -21,5 +21,6 @@
   [ $status -ne 0 ]
   echo "${lines[@]}"
   [ "${lines[0]}" != "panic: runtime error: invalid memory address or nil pointer dereference" ]
-  [ "${lines[0]}" == "[fatal] Command [missing-imports] has 'imports' set, but no commands were found. Check your yaml file." ]
+  # Error message now includes enhanced diagnostic info with missing file names.
+  [[ "$output" =~ "Command [missing-imports] has 'imports' set, but no commands were found." ]]
 }

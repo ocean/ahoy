@@ -359,8 +359,39 @@ func getCommands(config Config) []*cobra.Command {
 			subCommands := getSubCommands(cmd.Imports)
 			if len(subCommands) == 0 {
 				if !cmd.Optional {
-					logger("fatal", "Command ["+name+"] has 'imports' set, but no commands were found. Check your yaml file.")
+					errorMsg := fmt.Sprintf("Command [%s] has 'imports' set, but no commands were found.", name)
+
+					// List any import files that are missing to help diagnose the issue.
+					var missingFiles []string
+					for _, importPath := range cmd.Imports {
+						fullPath := expandPath(importPath, AhoyConf.srcDir)
+						if !fileExists(fullPath) {
+							missingFiles = append(missingFiles, importPath)
+						}
+					}
+
+					if len(missingFiles) > 0 {
+						errorMsg += fmt.Sprintf("\n\nMissing import files: %s", strings.Join(missingFiles, ", "))
+						errorMsg += "\n\nSolutions:"
+						errorMsg += "\n1. Create the missing files"
+						errorMsg += "\n2. Mark imports as optional with 'optional: true'"
+						if !VersionSupports(GetAhoyVersion(), "optional_imports") {
+							errorMsg += fmt.Sprintf("\n3. Upgrade Ahoy to v%s+ for optional import support", FeatureSupport["optional_imports"])
+						}
+						errorMsg += "\n\nFor more help, run: ahoy config validate"
+					}
+
+					logger("fatal", errorMsg)
 				} else {
+					if !VersionSupports(GetAhoyVersion(), "optional_imports") {
+						errorMsg := fmt.Sprintf("Command [%s] uses 'optional: true' but this Ahoy version (%s) doesn't support optional imports.", name, GetAhoyVersion())
+						errorMsg += fmt.Sprintf("\n\nThis feature requires Ahoy %s or later.", FeatureSupport["optional_imports"])
+						errorMsg += "\n\nSolutions:"
+						errorMsg += "\n1. Upgrade Ahoy to the latest version"
+						errorMsg += "\n2. Remove 'optional: true' and create the missing import files"
+						errorMsg += "\n\nFor more help, run: ahoy config validate"
+						logger("fatal", errorMsg)
+					}
 					continue
 				}
 			}
