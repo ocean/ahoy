@@ -673,7 +673,9 @@ USAGE:
 {{if .HasAvailableSubCommands}}
 COMMANDS:{{range .Commands}}{{if not .Hidden}}
    {{.Name}}{{if .Aliases}}, {{join .Aliases ", "}}{{end}}	{{.Short}}
-{{end}}{{end}}{{end}}{{if .Aliases}}
+{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+FLAGS:
+{{.LocalFlags.FlagUsages}}{{end}}{{if .Aliases}}
 ALIASES:
    {{join .Aliases ", "}}
 {{end}}

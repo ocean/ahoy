@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -21,4 +22,9 @@ func validateCommandAction(cmd *cobra.Command, args []string) {
 
 	result := RunConfigValidate(configFile)
 	PrintConfigReport(result)
+
+	// Exit with a non-zero status code when the configuration has errors.
+	if !result.ConfigValid || result.ValidationResult.HasError {
+		os.Exit(1)
+	}
 }
