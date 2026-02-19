@@ -283,3 +283,29 @@ func appRun(args []string) (string, error) {
 	}
 	return string(out), nil
 }
+
+func TestExpandPath(t *testing.T) {
+	home, _ := os.UserHomeDir()
+
+	tests := []struct {
+		path     string
+		baseDir  string
+		expected string
+	}{
+		// Absolute paths returned as-is.
+		{"/absolute/path", "/base", "/absolute/path"},
+		// Tilde expanded to home directory.
+		{"~/mydir", "/base", filepath.Join(home, "mydir")},
+		{"~/.ahoy.yml", "/base", filepath.Join(home, ".ahoy.yml")},
+		// Relative paths joined with base directory.
+		{"relative/path", "/base", "/base/relative/path"},
+		{".env", "/some/dir", "/some/dir/.env"},
+	}
+
+	for _, tt := range tests {
+		result := expandPath(tt.path, tt.baseDir)
+		if result != tt.expected {
+			t.Errorf("expandPath(%q, %q) = %q, want %q", tt.path, tt.baseDir, result, tt.expected)
+		}
+	}
+}
