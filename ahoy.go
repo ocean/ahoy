@@ -568,10 +568,15 @@ func setupApp(localArgs []string) *cobra.Command {
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("file", rootCmd.PersistentFlags().Lookup("file"))
 
-	// Mark help and version flags as hidden since we handle them manually
+	// Add hidden --simulate-version flag for testing the validation system
+	// against older Ahoy versions without needing to rebuild the binary.
+	rootCmd.PersistentFlags().StringVar(&simulateVersion, "simulate-version", "", "simulate a specific Ahoy version for testing")
+
+	// Mark help, version, and internal flags as hidden since we handle them manually.
 	rootCmd.PersistentFlags().MarkHidden("help")
 	rootCmd.PersistentFlags().MarkHidden("version")
 	rootCmd.PersistentFlags().MarkHidden("generate-bash-completion")
+	rootCmd.PersistentFlags().MarkHidden("simulate-version")
 
 	// Disable default help command
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})

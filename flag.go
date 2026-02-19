@@ -49,12 +49,13 @@ func initFlags(incomingFlags []string) {
 	tempFlags.BoolVar(&verbose, "v", false, "verbose output")
 	tempFlags.BoolVar(&verbose, "verbose", false, "verbose output")
 
-	// Add version and help flags that will be handled by cobra
+	// Add version, help, and internal flags that will be handled by cobra.
 	var versionFlag, helpFlag, bashCompletionFlag bool
 	tempFlags.BoolVar(&versionFlag, "version", false, "print version")
 	tempFlags.BoolVar(&helpFlag, "help", false, "print help")
 	tempFlags.BoolVar(&helpFlag, "h", false, "print help")
 	tempFlags.BoolVar(&bashCompletionFlag, "generate-bash-completion", false, "")
+	tempFlags.StringVar(&simulateVersion, "simulate-version", "", "")
 
 	// Parse the flags - capture any errors for invalid flags
 	err := tempFlags.Parse(normalizedFlags)
