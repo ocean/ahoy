@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -378,70 +377,55 @@ func getCommands(config Config) []*cobra.Command {
 }
 
 func addDefaultCommands(commands []*cobra.Command) []*cobra.Command {
-	defaultInitCmd := &cobra.Command{
-		Use:   "init",
+	// 'ahoy config' command group with 'validate' and 'init' subcommands.
+	configCmd := &cobra.Command{
+		Use:   "config",
+		Short: "Manage Ahoy configuration.",
+	}
+	configCmd.SetHelpFunc(commandHelpFunc)
+
+	configValidateCmd := &cobra.Command{
+		Use:   "validate",
+		Short: "Validate and diagnose an Ahoy configuration file.",
+		Run:   validateCommandAction,
+	}
+
+	configInitCmd := &cobra.Command{
+		Use:   "init [url]",
+		Short: "Initialise a new .ahoy.yml config file in the current directory.",
+		Run:   initCommandAction,
+	}
+	configInitCmd.Flags().Bool("force", false, "force overwriting the .ahoy.yml file in the current directory.")
+
+	configCmd.AddCommand(configValidateCmd, configInitCmd)
+
+	// 'ahoy init' kept for backwards compatibility with a deprecation notice.
+	deprecatedInitCmd := &cobra.Command{
+		Use:   "init [url]",
 		Short: "Initialise a new .ahoy.yml config file in the current directory.",
 		Run: func(cmd *cobra.Command, args []string) {
-			force, _ := cmd.Flags().GetBool("force")
-			if fileExists(filepath.Join(".", ".ahoy.yml")) {
-				if force {
-					fmt.Println("Warning: '--force' parameter passed, overwriting .ahoy.yml in current directory.")
-				} else {
-					fmt.Println("Warning: .ahoy.yml found in current directory.")
-					fmt.Fprint(os.Stderr, "Are you sure you wish to overwrite it with an example file, y/N ? ")
-					reader := bufio.NewReader(os.Stdin)
-					char, _, err := reader.ReadRune()
-					if err != nil {
-						fmt.Println(err)
-					}
-					// If "y" or "Y", continue and overwrite.
-					// Anything else, exit.
-					if char != 'y' && char != 'Y' {
-						fmt.Println("Abort: exiting without overwriting.")
-						os.Exit(0)
-					}
-					if len(args) > 0 {
-						fmt.Println("Ok, overwriting .ahoy.yml in current directory with specified file.")
-					} else {
-						fmt.Println("Ok, overwriting .ahoy.yml in current directory with example file.")
-					}
-				}
-			}
-			// Grab the URL or use a default for the initial ahoy file.
-			// Allows users to define their own files to call to init.
-			// TODO: Make file downloading OS-independent.
-			wgetURL := "https://raw.githubusercontent.com/ahoy-cli/ahoy/master/examples/examples.ahoy.yml"
-			if len(args) > 0 {
-				wgetURL = args[0]
-			}
-			grabYaml := "wget " + wgetURL + " -O .ahoy.yml"
-			command := exec.Command("bash", "-c", grabYaml)
-			command.Stdin = os.Stdin
-			command.Stderr = os.Stderr
-			if err := command.Run(); err != nil {
-				fmt.Fprintln(os.Stderr)
-				os.Exit(1)
-			} else {
-				if len(args) > 0 {
-					fmt.Println("Your specified .ahoy.yml has been downloaded to the current directory.")
-				} else {
-					fmt.Println("Example .ahoy.yml downloaded to the current directory. You can customize it to suit your needs!")
-				}
-			}
+			fmt.Println("Note: 'ahoy init' is deprecated. Please use 'ahoy config init' instead.")
+			initCommandAction(cmd, args)
 		},
 	}
-	defaultInitCmd.Flags().Bool("force", false, "force overwriting the .ahoy.yml file in the current directory.")
+	deprecatedInitCmd.Flags().Bool("force", false, "force overwriting the .ahoy.yml file in the current directory.")
 
 	// Don't add default commands if they've already been set.
-	found := false
+	hasConfig := false
+	hasInit := false
 	for _, cmd := range commands {
-		if cmd.Name() == defaultInitCmd.Name() {
-			found = true
-			break
+		switch cmd.Name() {
+		case "config":
+			hasConfig = true
+		case "init":
+			hasInit = true
 		}
 	}
-	if !found {
-		commands = append(commands, defaultInitCmd)
+	if !hasConfig {
+		commands = append(commands, configCmd)
+	}
+	if !hasInit {
+		commands = append(commands, deprecatedInitCmd)
 	}
 	return commands
 }
@@ -689,6 +673,7 @@ COMMANDS:{{range .Commands}}{{if not .Hidden}}
    {{.Name}}{{if .Aliases}}, {{join .Aliases ", "}}{{end}}{{if .HasSubCommands}} ▼{{end}}	{{.Short}}
 {{end}}{{end}}
 Use 'ahoy <command> --help' for detailed information about a command.
+Run 'ahoy config validate' to check your configuration for issues.
 {{end}}{{if .HasAvailableLocalFlags}}
 GLOBAL OPTIONS:
 {{.LocalFlags.FlagUsages}}{{end}}{{if .Version}}

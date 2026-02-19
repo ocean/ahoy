@@ -31,8 +31,10 @@ teardown() {
 @test "Run ahoy init with an existing .ahoy.yml file in the current directory" {
   cp tmp.ahoy.yml .ahoy.yml
   run ./ahoy init --force
-  [ "${lines[0]}" == "Warning: '--force' parameter passed, overwriting .ahoy.yml in current directory." ]
-  # Check that file was successfully downloaded (last line is wget output showing .ahoy.yml saved)
-  [[ "${lines[$((${#lines[@]}-1))]}" =~ ".ahoy.yml" ]]
+  # ahoy init now shows a deprecation notice first, then the force warning.
+  [[ "$output" =~ "deprecated" ]]
+  [[ "$output" =~ "Warning: '--force' parameter passed, overwriting .ahoy.yml in current directory." ]]
+  # Check that file was successfully downloaded.
+  [[ "$output" =~ ".ahoy.yml" ]]
   rm .ahoy.yml
 }
