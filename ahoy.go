@@ -43,9 +43,10 @@ type Command struct {
 }
 
 var (
-	rootCmd    *cobra.Command
-	sourcefile string
-	verbose    bool
+	rootCmd         *cobra.Command
+	sourcefile      string
+	verbose         bool
+	simulateVersion string
 )
 
 // The build version can be set using the go linker flag `-ldflags "-X main.version=$VERSION"`
@@ -78,6 +79,29 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+// expandPath expands a file path, handling tilde expansion and relative paths.
+// For absolute paths (starting with /), returns the path as-is.
+// For tilde paths (starting with ~), expands to the user home directory.
+// For relative paths, joins with the provided base directory.
+func expandPath(path, baseDir string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	if strings.HasPrefix(path, "/") {
+		return path
+	} else if strings.HasPrefix(path, "~") {
+		if home, err := os.UserHomeDir(); err == nil {
+			remainder := path[1:]
+			if len(remainder) > 0 && remainder[0] == '/' {
+				remainder = remainder[1:]
+			}
+			return filepath.Join(home, remainder)
+		}
+		return path
+	}
+	return filepath.Join(baseDir, path)
 }
 
 func getConfigPath(sourcefile string) (string, error) {
@@ -153,17 +177,17 @@ func getSubCommands(includes []string) []*cobra.Command {
 		if len(include) == 0 {
 			continue
 		}
-		// If the include path is not absolute or a home directory path,
-		// prepend the source directory to make it relative to the config file.
-		if !strings.HasPrefix(include, "/") && !strings.HasPrefix(include, "~") {
-			include = filepath.Join(AhoyConf.srcDir, include)
-		}
+		include = expandPath(include, AhoyConf.srcDir)
 		if _, err := os.Stat(include); err != nil {
 			// Skipping files that cannot be loaded allows us to separate
 			// subcommands into public and private.
 			continue
 		}
-		config, _ := getConfig(include)
+		config, err := getConfig(include)
+		if err != nil {
+			logger("error", "Could not load imported config '"+include+"': "+err.Error())
+			continue
+		}
 		includeCommands := getCommands(config)
 		for _, command := range includeCommands {
 			commands[command.Name()] = command
@@ -215,7 +239,7 @@ func getCommands(config Config) []*cobra.Command {
 	// Get environment variables from the 'global' environment variable file, if it is defined.
 	if len(config.Env) > 0 {
 		for _, envPath := range config.Env {
-			globalEnvFile := filepath.Join(AhoyConf.srcDir, envPath)
+			globalEnvFile := expandPath(envPath, AhoyConf.srcDir)
 			vars := getEnvironmentVars(globalEnvFile)
 			if vars != nil {
 				envVars = append(envVars, vars...)
@@ -308,7 +332,7 @@ func getCommands(config Config) []*cobra.Command {
 				// defined in the 'global' env file.
 				if len(cmdEnv) > 0 {
 					for _, envPath := range cmdEnv {
-						cmdEnvFile := filepath.Join(AhoyConf.srcDir, envPath)
+						cmdEnvFile := expandPath(envPath, AhoyConf.srcDir)
 						vars := getEnvironmentVars(cmdEnvFile)
 						if vars != nil {
 							cmdEnvVars = append(cmdEnvVars, vars...)
