@@ -298,8 +298,8 @@ func TestExpandPath(t *testing.T) {
 		{"~/mydir", "/base", filepath.Join(home, "mydir")},
 		{"~/.ahoy.yml", "/base", filepath.Join(home, ".ahoy.yml")},
 		// Relative paths joined with base directory.
-		{"relative/path", "/base", "/base/relative/path"},
-		{".env", "/some/dir", "/some/dir/.env"},
+		{"relative/path", "/base", filepath.Join("/base", "relative/path")},
+		{".env", "/some/dir", filepath.Join("/some/dir", ".env")},
 	}
 
 	for _, tt := range tests {
