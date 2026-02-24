@@ -151,8 +151,25 @@ commands:
       - t
 EOF
 
-  # Simulate an old version that doesn't support aliases.
+  # command_aliases is a warning (not error), so exit code must be 0.
   run "$ORIGINAL_DIR/ahoy" --simulate-version v2.0.0 config validate
   [ "$status" -eq 0 ]
   [[ "$output" =~ "aliases" ]] || [[ "$output" =~ "warning" ]] || [[ "$output" =~ "Warning" ]]
+}
+
+@test "ahoy config validate exits 1 when simulate-version triggers error-severity issue" {
+  cat > .ahoy.yml <<'EOF'
+ahoyapi: v2
+commands:
+  fetch:
+    usage: Fetch subcommands
+    imports:
+      - sub.ahoy.yml
+    optional: true
+EOF
+
+  # optional_imports requires v2.2.0; v2.1.0 triggers an error-severity issue.
+  run "$ORIGINAL_DIR/ahoy" --simulate-version v2.1.0 config validate
+  [ "$status" -eq 1 ]
+  [[ "$output" =~ "optional" ]]
 }
