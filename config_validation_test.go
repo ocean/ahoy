@@ -308,6 +308,131 @@ func TestVersionSupports(t *testing.T) {
 	}
 }
 
+// TestValidateConfig_* tests call ValidateConfig() directly with controlled Config
+// structs and a pinned simulateVersion so every internal branch is exercised
+// independently of file I/O and the getConfig() YAML parser.
+
+func withSimulateVersion(ver string, fn func()) {
+	prev := simulateVersion
+	simulateVersion = ver
+	defer func() { simulateVersion = prev }()
+	fn()
+}
+
+func TestValidateConfig_WrongAPIVersion(t *testing.T) {
+	config := Config{AhoyAPI: "v1"}
+
+	result := ValidateConfig(config, "test.ahoy.yml")
+
+	if !result.HasError {
+		t.Error("Expected HasError to be true for unsupported API version.")
+	}
+	if len(result.Issues) == 0 {
+		t.Fatal("Expected at least one issue for unsupported API version.")
+	}
+	issue := result.Issues[0]
+	if issue.Type != "version_mismatch" {
+		t.Errorf("Expected Type 'version_mismatch', got %q.", issue.Type)
+	}
+	if issue.Severity != "error" {
+		t.Errorf("Expected Severity 'error', got %q.", issue.Severity)
+	}
+}
+
+func TestValidateConfig_MultipleEnvFiles_OldVersion(t *testing.T) {
+	// multiple_env_files requires v2.5.0; simulate v2.4.0 to trigger the warning.
+	withSimulateVersion("v2.4.0", func() {
+		config := Config{
+			AhoyAPI: "v2",
+			Env:     StringArray{".env", ".env.local"},
+		}
+
+		result := ValidateConfig(config, "test.ahoy.yml")
+
+		if result.HasError {
+			t.Error("Expected HasError to be false for a warning-only issue.")
+		}
+		found := false
+		for _, issue := range result.Issues {
+			if issue.Feature == "multiple_env_files" && issue.Severity == "warning" {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("Expected a 'multiple_env_files' warning issue for v2.4.0.")
+		}
+	})
+}
+
+func TestValidateConfig_OptionalImports_OldVersion(t *testing.T) {
+	// optional_imports requires v2.2.0; simulate v2.1.0 to trigger the error.
+	withSimulateVersion("v2.1.0", func() {
+		config := Config{
+			AhoyAPI: "v2",
+			Commands: map[string]Command{
+				"fetch": {Optional: true, Imports: []string{"sub.ahoy.yml"}},
+			},
+		}
+
+		result := ValidateConfig(config, "test.ahoy.yml")
+
+		if !result.HasError {
+			t.Error("Expected HasError to be true for error-severity optional_imports issue.")
+		}
+		found := false
+		for _, issue := range result.Issues {
+			if issue.Feature == "optional_imports" && issue.Severity == "error" {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("Expected an 'optional_imports' error issue for v2.1.0.")
+		}
+	})
+}
+
+func TestValidateConfig_CommandAliases_OldVersion(t *testing.T) {
+	// command_aliases requires v2.1.0; simulate v2.0.0 to trigger the warning.
+	withSimulateVersion("v2.0.0", func() {
+		config := Config{
+			AhoyAPI: "v2",
+			Commands: map[string]Command{
+				"deploy": {Aliases: []string{"d", "dep"}, Cmd: "echo deploy"},
+			},
+		}
+
+		result := ValidateConfig(config, "test.ahoy.yml")
+
+		if result.HasError {
+			t.Error("Expected HasError to be false for a warning-only issue.")
+		}
+		found := false
+		for _, issue := range result.Issues {
+			if issue.Feature == "command_aliases" && issue.Severity == "warning" {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("Expected a 'command_aliases' warning issue for v2.0.0.")
+		}
+	})
+}
+
+func TestValidateConfig_ValidConfig_NoIssues(t *testing.T) {
+	config := Config{
+		AhoyAPI: "v2",
+		Commands: map[string]Command{
+			"build": {Cmd: "make build"},
+		},
+	}
+
+	result := ValidateConfig(config, "test.ahoy.yml")
+
+	if result.HasError {
+		t.Errorf("Expected no errors for valid config, got issues: %v", result.Issues)
+	}
+}
+
 func TestConfigReport_Fields(t *testing.T) {
 	result := ConfigReport{
 		ConfigFile:       "test.ahoy.yml",
