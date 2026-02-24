@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 func TestFlagParsing(t *testing.T) {
@@ -91,26 +90,50 @@ func TestSourcefileFlagBehavior(t *testing.T) {
 }
 
 func TestEnvironmentVariableFlags(t *testing.T) {
-	// Test AHOY_VERBOSE environment variable with viper
 	originalVerbose := verbose
+	originalSourcefile := sourcefile
 	defer func() {
 		verbose = originalVerbose
-		viper.Reset()
+		sourcefile = originalSourcefile
+		os.Unsetenv("AHOY_VERBOSE")
+		os.Unsetenv("AHOY_FILE")
 	}()
 
-	// Set environment variable
-	os.Setenv("AHOY_VERBOSE", "true")
-	defer os.Unsetenv("AHOY_VERBOSE")
+	t.Run("AHOY_VERBOSE sets verbose when no flag given", func(t *testing.T) {
+		verbose = false
+		os.Setenv("AHOY_VERBOSE", "true")
+		initFlags([]string{})
+		if !verbose {
+			t.Error("Expected verbose to be true via AHOY_VERBOSE env var.")
+		}
+	})
 
-	// Initialize viper
-	viper.SetEnvPrefix("AHOY")
-	viper.AutomaticEnv()
+	t.Run("explicit -v flag takes precedence over AHOY_VERBOSE=false", func(t *testing.T) {
+		verbose = false
+		os.Unsetenv("AHOY_VERBOSE")
+		initFlags([]string{"-v"})
+		if !verbose {
+			t.Error("Expected verbose to be true via -v flag.")
+		}
+	})
 
-	// Viper should pick up the environment variable
-	if !viper.GetBool("VERBOSE") {
-		// This is OK - viper environment variable handling is different
-		// The test verifies the setup works
-	}
+	t.Run("AHOY_FILE sets sourcefile when no flag given", func(t *testing.T) {
+		sourcefile = ""
+		os.Setenv("AHOY_FILE", "custom.ahoy.yml")
+		initFlags([]string{})
+		if sourcefile != "custom.ahoy.yml" {
+			t.Errorf("Expected sourcefile 'custom.ahoy.yml', got '%s'.", sourcefile)
+		}
+	})
+
+	t.Run("explicit -f flag takes precedence over AHOY_FILE", func(t *testing.T) {
+		sourcefile = ""
+		os.Setenv("AHOY_FILE", "env.ahoy.yml")
+		initFlags([]string{"-f", "explicit.ahoy.yml"})
+		if sourcefile != "explicit.ahoy.yml" {
+			t.Errorf("Expected sourcefile 'explicit.ahoy.yml' from flag, got '%s'.", sourcefile)
+		}
+	})
 }
 
 func TestFlagNameAliases(t *testing.T) {
@@ -172,19 +195,19 @@ func TestCLIAppConfiguration(t *testing.T) {
 }
 
 func TestMigrationCompatibility(t *testing.T) {
-	// Test that cobra/viper integration works correctly
-
+	// Verify persistent flags are registered on the root cobra command
+	// so that -v/--verbose and -f/--file work identically.
 	cmd := setupApp([]string{})
 	if cmd == nil {
 		t.Error("setupApp returned nil")
 		return
 	}
 
-	// Check that flags can be bound to viper
-	viper.BindPFlag("verbose", cmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("file", cmd.PersistentFlags().Lookup("file"))
-
-	// This should not panic or error
+	for _, name := range []string{"verbose", "file"} {
+		if cmd.PersistentFlags().Lookup(name) == nil {
+			t.Errorf("Expected persistent flag '%s' to be registered on root command.", name)
+		}
+	}
 }
 
 func TestFlagValueTypes(t *testing.T) {

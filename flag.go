@@ -3,9 +3,8 @@ package main
 import (
 	"bytes"
 	"flag"
+	"os"
 	"strings"
-
-	"github.com/spf13/viper"
 )
 
 var versionFlagSet bool
@@ -69,11 +68,14 @@ func initFlags(incomingFlags []string) {
 	helpFlagSet = helpFlag
 	bashCompletionFlagSet = bashCompletionFlag
 
-	// Update viper with parsed values
-	if sourcefile != "" {
-		viper.Set("file", sourcefile)
+	// Apply AHOY_FILE and AHOY_VERBOSE environment variables.
+	// Explicit flags take precedence over environment variables.
+	if sourcefile == "" {
+		if v := os.Getenv("AHOY_FILE"); v != "" {
+			sourcefile = v
+		}
 	}
-	if verbose {
-		viper.Set("verbose", verbose)
+	if !verbose && os.Getenv("AHOY_VERBOSE") == "true" {
+		verbose = true
 	}
 }

@@ -14,7 +14,6 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
 
@@ -556,10 +555,6 @@ func BeforeCommand(cmd *cobra.Command, args []string) error {
 func setupApp(localArgs []string) *cobra.Command {
 	var err error
 
-	// Initialize viper for configuration management
-	viper.SetEnvPrefix("AHOY")
-	viper.AutomaticEnv()
-
 	initFlags(localArgs)
 
 	// Save the parsed values before creating flags
@@ -586,10 +581,6 @@ func setupApp(localArgs []string) *cobra.Command {
 	rootCmd.PersistentFlags().Bool("help", false, "show help")
 	rootCmd.PersistentFlags().Bool("version", false, "print the version")
 	rootCmd.PersistentFlags().Bool("generate-bash-completion", false, "")
-
-	// Bind flags to viper
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("file", rootCmd.PersistentFlags().Lookup("file"))
 
 	// Add hidden --simulate-version flag for testing the validation system
 	// against older Ahoy versions without needing to rebuild the binary.
