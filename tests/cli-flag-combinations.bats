@@ -84,9 +84,9 @@
   [ $status -ne 0 ]
   [[ "$output" == *"error"* ]] || [[ "$output" == *"fatal"* ]]
   
-  # Test with invalid flag - urfave/cli shows help instead of erroring (good UX)
+  # An invalid flag should show help and exit 1 (failure, not success).
   run ./ahoy --invalid-flag
-  [ $status -eq 0 ]
+  [ $status -eq 1 ]
   [[ "$output" == *"flag provided but not defined"* ]]
 }
 

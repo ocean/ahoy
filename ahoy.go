@@ -177,8 +177,13 @@ func getSubCommands(includes []string) []*cobra.Command {
 		}
 		include = expandPath(include, AhoyConf.srcDir)
 		if _, err := os.Stat(include); err != nil {
-			// Skipping files that cannot be loaded allows us to separate
-			// subcommands into public and private.
+			if !os.IsNotExist(err) {
+				// File exists but is unreadable (e.g. EACCES) — log so the
+				// user knows why commands are missing.
+				logger("error", "Cannot access import file '"+include+"': "+err.Error())
+			}
+			// Skipping missing or unreadable files allows subcommands to be
+			// separated into public and private sets.
 			continue
 		}
 		config, err := getConfig(include)
@@ -214,6 +219,9 @@ func getEnvironmentVars(envFile string) []string {
 
 	env, err := os.ReadFile(envFile)
 	if err != nil {
+		// The file was confirmed to exist above, so this is a real read
+		// failure (e.g. EACCES, EIO) — not a routine missing-file case.
+		logger("error", "Failed to read environment file '"+envFile+"': "+err.Error())
 		return nil
 	}
 
@@ -645,6 +653,7 @@ ALIASES:
 	t := template.Must(template.New("commandHelp").Funcs(funcMap).Parse(helpTemplate))
 	err := t.Execute(w, cmd)
 	if err != nil {
+		fmt.Fprintf(cmd.ErrOrStderr(), "Error rendering help: %s\n", err)
 		if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
 			fmt.Fprintf(cmd.ErrOrStderr(), "CLI TEMPLATE ERROR: %#v\n", err)
 		}
@@ -683,6 +692,7 @@ VERSION:
 	t := template.Must(template.New("help").Funcs(funcMap).Parse(helpTemplate))
 	err := t.Execute(w, cmd)
 	if err != nil {
+		fmt.Fprintf(cmd.ErrOrStderr(), "Error rendering help: %s\n", err)
 		if os.Getenv("CLI_TEMPLATE_ERROR_DEBUG") != "" {
 			fmt.Fprintf(cmd.ErrOrStderr(), "CLI TEMPLATE ERROR: %#v\n", err)
 		}
@@ -695,11 +705,11 @@ func main() {
 	logger("debug", "main()")
 	rootCmd = setupApp(os.Args[1:])
 
-	// Check for invalid flag error from initFlags - show help and exit 0 for better UX
+	// Check for invalid flag error from initFlags - show help and exit 1.
 	if invalidFlagError != "" {
 		fmt.Print(invalidFlagError)
 		rootCmd.Help()
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	// Check for -version and -help flags set during initFlags (single-dash versions)
