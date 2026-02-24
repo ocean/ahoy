@@ -2,6 +2,7 @@ package main
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -34,9 +35,16 @@ func TestRunConfigValidate_InvalidYAML(t *testing.T) {
 		t.Error("Expected ConfigValid to be false for invalid YAML")
 	}
 
-	expectedRec := "Fix YAML syntax errors in configuration file"
-	if !slices.Contains(result.Recommendations, expectedRec) {
-		t.Errorf("Expected recommendation %q not found in: %v", expectedRec, result.Recommendations)
+	// The recommendation now includes the specific parse error detail.
+	if len(result.Recommendations) == 0 {
+		t.Error("Expected at least one recommendation for invalid YAML.")
+		return
+	}
+	if !strings.HasPrefix(result.Recommendations[0], "Fix YAML syntax error:") {
+		t.Errorf("Expected recommendation to start with 'Fix YAML syntax error:', got: %q", result.Recommendations[0])
+	}
+	if result.ParseError == "" {
+		t.Error("Expected ParseError to be populated for invalid YAML.")
 	}
 }
 

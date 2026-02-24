@@ -338,6 +338,7 @@ type ConfigReport struct {
 	ConfigFile       string
 	ConfigExists     bool
 	ConfigValid      bool
+	ParseError       string // populated when ConfigValid is false; contains the raw parse error
 	APIVersion       string
 	AhoyVersion      string
 	ValidationResult ValidationResult
@@ -380,7 +381,8 @@ func RunConfigValidate(configFile string) ConfigReport {
 	config, err := getConfig(configFile)
 	if err != nil {
 		result.ConfigValid = false
-		result.Recommendations = append(result.Recommendations, "Fix YAML syntax errors in configuration file")
+		result.ParseError = err.Error()
+		result.Recommendations = append(result.Recommendations, "Fix YAML syntax error: "+err.Error())
 		return result
 	}
 
@@ -515,6 +517,9 @@ func PrintConfigReport(result ConfigReport) {
 		fmt.Println("Valid YAML")
 	} else {
 		fmt.Println("❌ Invalid YAML")
+		if result.ParseError != "" {
+			fmt.Printf("   %s\n", result.ParseError)
+		}
 	}
 
 	fmt.Println()
