@@ -124,7 +124,6 @@ func getConfigPath(sourcefile string) (string, error) {
 	prevDir := ""
 	for dir != prevDir {
 		ymlpath := filepath.Join(dir, ".ahoy.yml")
-		// log.Println(ymlpath)
 		if _, err := os.Stat(ymlpath); err == nil {
 			logger("debug", "Found .ahoy.yml at "+ymlpath)
 			return ymlpath, err
@@ -315,7 +314,6 @@ func getCommands(config Config) []*cobra.Command {
 						cmdArgs = append(cmdArgs, arg)
 					}
 				}
-				// fmt.Printf("%s : %+v\n", "Args", cmdArgs)
 
 				// Replace the entry point placeholders.
 				cmdEntrypoint = config.Entrypoint[:]
