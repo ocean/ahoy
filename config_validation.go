@@ -10,7 +10,7 @@ import (
 
 // ValidationIssue represents a configuration validation problem.
 type ValidationIssue struct {
-	Type            string // "version_mismatch", "unknown_field", "missing_file", "syntax_error"
+	Type            string // "version_mismatch", "missing_file"
 	Severity        string // "error", "warning", "info"
 	Message         string
 	File            string
