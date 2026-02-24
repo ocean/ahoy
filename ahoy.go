@@ -241,7 +241,7 @@ func getCommands(config Config) []*cobra.Command {
 	exportCmds := []*cobra.Command{}
 	envVars := []string{}
 
-	// Get environment variables from the 'global' environment variable file, if it is defined.
+	// Get environment variables from all 'global' environment variable files, if any are defined.
 	if len(config.Env) > 0 {
 		for _, envPath := range config.Env {
 			globalEnvFile := expandPath(envPath, AhoyConf.srcDir)
@@ -271,7 +271,7 @@ func getCommands(config Config) []*cobra.Command {
 			logger("fatal", "Command ["+name+"] has both 'cmd' and 'imports' set, but only one is allowed. Check your yaml file.")
 		}
 
-		// Check that a command with 'imports' set has a least one entry.
+		// Check that a command with 'imports' set has at least one entry.
 		if cmd.Imports != nil && len(cmd.Imports) == 0 {
 			logger("fatal", "Command ["+name+"] has 'imports' set, but it is empty. Check your yaml file.")
 		}
@@ -329,7 +329,7 @@ func getCommands(config Config) []*cobra.Command {
 				// Collect environment variables
 				cmdEnvVars := append([]string{}, envVars...)
 
-				// If defined, included specified command-level environment variables.
+				// If defined, include any command-level environment variables.
 				// Note that this will intentionally override any conflicting variables
 				// defined in the 'global' env file.
 				if len(cmdEnv) > 0 {
@@ -506,7 +506,8 @@ func NoArgsAction(cmd *cobra.Command, args []string) {
 	os.Exit(0)
 }
 
-// BeforeCommand runs before every command so arguments or flags must be passed
+// BeforeCommand is a PersistentPreRunE hook that handles --version and --help
+// flag processing before cobra executes each command.
 func BeforeCommand(cmd *cobra.Command, args []string) error {
 	// Check if version was set via --version (double dash) by cobra.
 	versionRequested, _ := cmd.Flags().GetBool("version")
