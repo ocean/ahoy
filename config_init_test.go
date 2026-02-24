@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,19 +45,59 @@ func TestDownloadFile_InvalidURL(t *testing.T) {
 	}
 }
 
-func TestDownloadFile_404Response(t *testing.T) {
+func TestDownloadFile_200Response(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ahoyapi: v2\ncommands: {}\n"))
+	}))
+	defer srv.Close()
+
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.yml")
 
-	err := downloadFile("https://raw.githubusercontent.com/ahoy-cli/ahoy/master/non-existent-file.yml", testFile)
-	if err == nil {
-		t.Error("Expected error when downloading 404 URL")
+	if err := downloadFile(srv.URL+"/test.yml", testFile); err != nil {
+		t.Fatalf("Expected no error for 200 response, got: %v", err)
 	}
-	if err != nil && err.Error() == "" {
-		t.Error("Error should have a descriptive message")
+	if !fileExists(testFile) {
+		t.Error("File should exist after successful download.")
+	}
+}
+
+func TestDownloadFile_404Response(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.yml")
+
+	err := downloadFile(srv.URL+"/missing.yml", testFile)
+	if err == nil {
+		t.Error("Expected error when server returns 404.")
 	}
 	if fileExists(testFile) {
-		t.Error("File should not be created when download returns 404")
+		t.Error("File should not be created when download returns 404.")
+	}
+}
+
+func TestDownloadFile_InvalidScheme(t *testing.T) {
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.yml")
+
+	for _, badURL := range []string{
+		"file:///etc/passwd",
+		"ftp://example.com/file.yml",
+		"not-a-url",
+		"",
+	} {
+		err := downloadFile(badURL, testFile)
+		if err == nil {
+			t.Errorf("Expected error for URL %q, got nil.", badURL)
+		}
+		if fileExists(testFile) {
+			t.Errorf("File should not be created for invalid URL %q.", badURL)
+		}
 	}
 }
 

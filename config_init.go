@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,14 +20,20 @@ type InitArgs struct {
 }
 
 // downloadFile downloads a file from the given URL and saves it to the specified path.
-func downloadFile(url, destPath string) error {
+// Only http:// and https:// URLs are accepted; all other schemes are rejected.
+func downloadFile(rawURL, destPath string) error {
+	parsed, err := url.Parse(rawURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return fmt.Errorf("invalid URL %q: only http and https schemes are supported", rawURL)
+	}
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	resp, err := client.Get(url)
+	resp, err := client.Get(rawURL)
 	if err != nil {
-		return fmt.Errorf("failed to fetch URL %s: %v", url, err)
+		return fmt.Errorf("failed to fetch URL %s: %v", rawURL, err)
 	}
 	defer resp.Body.Close()
 
