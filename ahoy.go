@@ -74,7 +74,7 @@ func logger(errType string, text string) {
 
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 	return !info.IsDir()
@@ -296,10 +296,8 @@ func getCommands(config Config) []*cobra.Command {
 			cmdName := name
 
 			newCmd.Run = func(cobraCmd *cobra.Command, args []string) {
-				// For some unclear reason, if we don't add an item at the end here,
-				// the first argument is skipped... actually it's not!
-				// 'bash -c' says that arguments will be passed starting with $0, which also means that
-				// $@ skips the first item. See http://stackoverflow.com/questions/41043163/xargs-sh-c-skipping-the-first-argument
+				// 'bash -c' passes arguments starting with $0, so $@ skips the first item.
+				// See http://stackoverflow.com/questions/41043163/xargs-sh-c-skipping-the-first-argument
 				var cmdItems []string
 				var cmdArgs []string
 				var cmdEntrypoint []string
@@ -482,12 +480,6 @@ func BashComplete(cmd *cobra.Command, args []string, toComplete string) ([]strin
 // are passed or when a command doesn't exist.
 func NoArgsAction(cmd *cobra.Command, args []string) {
 	if len(args) > 0 {
-		// If there's no config file, we can't run any commands
-		if AhoyConf.srcFile == "" {
-			msg := "Command not found for '" + strings.Join(args, " ") + "'"
-			logger("fatal", msg)
-		}
-		// Otherwise, cobra will handle the unknown command error
 		msg := "Command not found for '" + strings.Join(args, " ") + "'"
 		logger("fatal", msg)
 	}
@@ -766,19 +758,27 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Temporarily suppress stderr to capture cobra's error output
+	// Temporarily suppress stderr to capture cobra's error output.
+	// If pipe creation fails, fall back to executing without stderr capture.
 	oldStderr := os.Stderr
-	r, w, _ := os.Pipe()
-	os.Stderr = w
+	r, w, pipeErr := os.Pipe()
 
-	err := rootCmd.Execute()
+	var err error
+	var stderrOutput []byte
 
-	// Restore stderr
-	w.Close()
-	os.Stderr = oldStderr
+	if pipeErr != nil {
+		err = rootCmd.Execute()
+	} else {
+		os.Stderr = w
+		err = rootCmd.Execute()
 
-	// Read what was written to stderr
-	stderrOutput, _ := io.ReadAll(r)
+		// Restore stderr.
+		w.Close()
+		os.Stderr = oldStderr
+
+		// Read what was written to stderr.
+		stderrOutput, _ = io.ReadAll(r)
+	}
 
 	if err != nil {
 		// Check if it's an unknown command error

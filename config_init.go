@@ -34,14 +34,30 @@ func downloadFile(url, destPath string) error {
 		return fmt.Errorf("failed to download file: server returned %s", resp.Status)
 	}
 
-	out, err := os.Create(destPath)
+	// Write to a temporary file first, then atomically rename to the destination
+	// on success. This prevents a failed or partial download from leaving a
+	// corrupt file at the destination path.
+	tmpPath := destPath + ".tmp"
+	out, err := os.Create(tmpPath)
 	if err != nil {
-		return fmt.Errorf("failed to create file %s: %v", destPath, err)
+		return fmt.Errorf("failed to create temporary file %s: %v", tmpPath, err)
 	}
-	defer out.Close()
+	// Always clean up the temp file; harmless no-op after a successful rename.
+	defer os.Remove(tmpPath)
 
 	if _, err = io.Copy(out, resp.Body); err != nil {
+		out.Close()
 		return fmt.Errorf("failed to write file %s: %v", destPath, err)
+	}
+
+	// Close explicitly (not via defer) so buffered write errors reported at
+	// close time — common on NFS/SMB/Docker bind mounts — are not swallowed.
+	if err = out.Close(); err != nil {
+		return fmt.Errorf("failed to finalise file %s: %v", destPath, err)
+	}
+
+	if err = os.Rename(tmpPath, destPath); err != nil {
+		return fmt.Errorf("failed to finalise file %s: %v", destPath, err)
 	}
 
 	return nil
