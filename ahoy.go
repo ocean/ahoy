@@ -20,24 +20,24 @@ import (
 // Config handles the overall configuration in an ahoy.yml file
 // with one Config per file.
 type Config struct {
-	Usage      string
-	AhoyAPI    string
-	Commands   map[string]Command
-	Entrypoint []string
-	Env        StringArray
+	Usage      string             `yaml:"usage"`
+	AhoyAPI    string             `yaml:"ahoyapi"`
+	Commands   map[string]Command `yaml:"commands"`
+	Entrypoint []string           `yaml:"entrypoint"`
+	Env        StringArray        `yaml:"env"`
 }
 
 // Command is an ahoy command detailed in ahoy.yml files. Multiple
 // commands can be defined per ahoy.yml file.
 type Command struct {
-	Description string
-	Usage       string
-	Cmd         string
-	Env         StringArray
-	Hide        bool
-	Optional    bool
-	Imports     []string
-	Aliases     []string
+	Description string      `yaml:"description"`
+	Usage       string      `yaml:"usage"`
+	Cmd         string      `yaml:"cmd"`
+	Env         StringArray `yaml:"env"`
+	Hide        bool        `yaml:"hide"`
+	Optional    bool        `yaml:"optional"`
+	Imports     []string    `yaml:"imports"`
+	Aliases     []string    `yaml:"aliases"`
 }
 
 var (
