@@ -483,11 +483,6 @@ func addDefaultCommands(commands []*cobra.Command) []*cobra.Command {
 func BashComplete(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	logger("debug", "BashComplete()")
 
-	if sourcefile != "" {
-		log.Println(sourcefile)
-		os.Exit(0)
-	}
-
 	completions := []string{}
 	for _, command := range cmd.Root().Commands() {
 		completions = append(completions, command.Name())
