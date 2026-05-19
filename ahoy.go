@@ -307,7 +307,7 @@ func getCommands(config Config) []*cobra.Command {
 			cmdEnv := cmd.Env
 			cmdName := name
 
-			newCmd.Run = func(cobraCmd *cobra.Command, args []string) {
+			newCmd.RunE = func(cobraCmd *cobra.Command, args []string) error {
 				// 'bash -c' passes arguments starting with $0, so $@ skips the first item.
 				// See http://stackoverflow.com/questions/41043163/xargs-sh-c-skipping-the-first-argument
 				var cmdItems []string
@@ -367,8 +367,9 @@ func getCommands(config Config) []*cobra.Command {
 				command.Env = append(command.Environ(), cmdEnvVars...)
 				if err := command.Run(); err != nil {
 					fmt.Fprintln(os.Stderr)
-					os.Exit(1)
+					return err
 				}
+				return nil
 			}
 		}
 
