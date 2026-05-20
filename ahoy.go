@@ -264,22 +264,26 @@ func getCommands(config Config) []*cobra.Command {
 	}
 	sort.Strings(keys)
 
+	var configErrors []string
 	for _, name := range keys {
 		cmd := config.Commands[name]
 
 		// Check that a command has 'cmd' OR 'imports' set.
 		if cmd.Cmd == "" && cmd.Imports == nil {
-			logger("fatal", "Command ["+name+"] has neither 'cmd' or 'imports' set. Check your yaml file.")
+			configErrors = append(configErrors, "Command ["+name+"] has neither 'cmd' or 'imports' set. Check your yaml file.")
+			continue
 		}
 
 		// Check if a command has 'cmd' AND 'imports' set.
 		if cmd.Cmd != "" && cmd.Imports != nil {
-			logger("fatal", "Command ["+name+"] has both 'cmd' and 'imports' set, but only one is allowed. Check your yaml file.")
+			configErrors = append(configErrors, "Command ["+name+"] has both 'cmd' and 'imports' set, but only one is allowed. Check your yaml file.")
+			continue
 		}
 
 		// Check that a command with 'imports' set has at least one entry.
 		if cmd.Imports != nil && len(cmd.Imports) == 0 {
-			logger("fatal", "Command ["+name+"] has 'imports' set, but it is empty. Check your yaml file.")
+			configErrors = append(configErrors, "Command ["+name+"] has 'imports' set, but it is empty. Check your yaml file.")
+			continue
 		}
 
 		newCmd := &cobra.Command{
@@ -420,6 +424,13 @@ func getCommands(config Config) []*cobra.Command {
 		newCmd.SetHelpFunc(commandHelpFunc)
 
 		exportCmds = append(exportCmds, newCmd)
+	}
+
+	for _, e := range configErrors {
+		logger("error", e)
+	}
+	if len(configErrors) > 0 {
+		logger("fatal", "Fix the above configuration errors and try again.")
 	}
 
 	return exportCmds
