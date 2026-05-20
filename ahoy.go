@@ -46,6 +46,7 @@ var (
 	verbose         bool
 	simulateVersion string
 	ahoyExecutable  string
+	importVisited   map[string]bool
 )
 
 // The build version can be set using the go linker flag `-ldflags "-X main.version=$VERSION"`
@@ -181,6 +182,18 @@ func getSubCommands(includes []string) []*cobra.Command {
 			continue
 		}
 		include = expandPath(include, AhoyConf.srcDir)
+
+		// Guard against circular imports. Lazily initialise so direct callers
+		// in tests don't need to prime the map themselves.
+		if importVisited == nil {
+			importVisited = map[string]bool{}
+		}
+		if importVisited[include] {
+			logger("warn", "Circular import detected for '"+include+"', skipping.")
+			continue
+		}
+		importVisited[include] = true
+
 		if _, err := os.Stat(include); err != nil {
 			if !os.IsNotExist(err) {
 				// File exists but is unreadable (e.g. EACCES) - log so the
@@ -603,11 +616,16 @@ func setupApp(localArgs []string) *cobra.Command {
 	// Disable default help command
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
 
+	importVisited = map[string]bool{}
+
 	AhoyConf.srcFile, err = getConfigPath(sourcefile)
 	if err != nil {
 		logger("fatal", err.Error())
 	} else {
 		AhoyConf.srcDir = filepath.Dir(AhoyConf.srcFile)
+		if AhoyConf.srcFile != "" {
+			importVisited[AhoyConf.srcFile] = true
+		}
 		// If we don't have a sourcefile, then just supply the default commands.
 		if AhoyConf.srcFile == "" {
 			commands := addDefaultCommands([]*cobra.Command{})

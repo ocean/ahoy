@@ -42,9 +42,10 @@ func TestGetCommands(t *testing.T) {
 }
 
 func TestGetSubCommand(t *testing.T) {
-	// Since we're not running the app directly, sourcedir doesn't get reset, so
-	// we need to reset it ourselves. TODO: Remove these globals somehow.
+	// Since we're not running the app directly, globals don't get reset, so
+	// we need to reset them ourselves. TODO: Remove these globals somehow.
 	AhoyConf.srcDir = ""
+	importVisited = nil
 
 	// When empty return empty list of commands.
 
@@ -143,6 +144,7 @@ commands:
 		t.Error("Error writing to file3.")
 	}
 
+	importVisited = nil
 	actual = getSubCommands([]string{
 		"./testing/a.ahoy.yml",
 		"./testing/b.ahoy.yml",
