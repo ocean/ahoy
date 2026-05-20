@@ -240,10 +240,24 @@ func TestGetConfigPathErrorOnBogusPath(t *testing.T) {
 func appRun(args []string) (string, error) {
 	stdout := os.Stdout
 	stderr := os.Stderr
-	r, w, _ := os.Pipe()
-	rErr, wErr, _ := os.Pipe()
+
+	r, w, pipeErr := os.Pipe()
+	if pipeErr != nil {
+		return "", fmt.Errorf("failed to create stdout pipe: %w", pipeErr)
+	}
+	rErr, wErr, pipeErr := os.Pipe()
+	if pipeErr != nil {
+		w.Close()
+		r.Close()
+		return "", fmt.Errorf("failed to create stderr pipe: %w", pipeErr)
+	}
+
 	os.Stdout = w
 	os.Stderr = wErr
+	defer func() {
+		os.Stdout = stdout
+		os.Stderr = stderr
+	}()
 
 	cmd := setupApp(args[1:])
 	// Don't call SetArgs again - setupApp already parsed the flags
@@ -276,8 +290,6 @@ func appRun(args []string) (string, error) {
 	wErr.Close()
 	out, _ := io.ReadAll(r)
 	errOut, _ := io.ReadAll(rErr)
-	os.Stdout = stdout
-	os.Stderr = stderr
 
 	// If there was an error output, include it
 	if len(errOut) > 0 {
