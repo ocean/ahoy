@@ -109,6 +109,18 @@ func expandPath(path, baseDir string) string {
 	return filepath.Join(baseDir, path)
 }
 
+// normalizePath normalizes a file path to its absolute and clean form.
+func normalizePath(path string) string {
+	if path == "" {
+		return ""
+	}
+	cleaned := filepath.Clean(path)
+	if abs, err := filepath.Abs(cleaned); err == nil {
+		return abs
+	}
+	return cleaned
+}
+
 func getConfigPath(sourcefile string) (string, error) {
 	var err error
 	config := ""
@@ -171,6 +183,45 @@ func getConfig(file string) (Config, error) {
 	return config, err
 }
 
+func processImport(include string, commands map[string]*cobra.Command) {
+	include = expandPath(include, AhoyConf.srcDir)
+	normalizedInclude := normalizePath(include)
+
+	// Guard against circular imports. Lazily initialise so direct callers
+	// in tests don't need to prime the map themselves.
+	if importVisited == nil {
+		importVisited = map[string]bool{}
+	}
+	if importVisited[normalizedInclude] {
+		logger("warn", "Circular import detected for '"+include+"', skipping.")
+		return
+	}
+	importVisited[normalizedInclude] = true
+	defer func() {
+		delete(importVisited, normalizedInclude)
+	}()
+
+	if _, err := os.Stat(include); err != nil {
+		if !os.IsNotExist(err) {
+			// File exists but is unreadable (e.g. EACCES) - log so the
+			// user knows why commands are missing.
+			logger("error", "Cannot access import file '"+include+"': "+err.Error())
+		}
+		// Skipping missing or unreadable files allows subcommands to be
+		// separated into public and private sets.
+		return
+	}
+	config, err := getConfig(include)
+	if err != nil {
+		logger("error", "Could not load imported config '"+include+"': "+err.Error())
+		return
+	}
+	includeCommands := getCommands(config)
+	for _, command := range includeCommands {
+		commands[command.Name()] = command
+	}
+}
+
 func getSubCommands(includes []string) []*cobra.Command {
 	subCommands := []*cobra.Command{}
 	if len(includes) == 0 {
@@ -181,38 +232,7 @@ func getSubCommands(includes []string) []*cobra.Command {
 		if len(include) == 0 {
 			continue
 		}
-		include = expandPath(include, AhoyConf.srcDir)
-
-		// Guard against circular imports. Lazily initialise so direct callers
-		// in tests don't need to prime the map themselves.
-		if importVisited == nil {
-			importVisited = map[string]bool{}
-		}
-		if importVisited[include] {
-			logger("warn", "Circular import detected for '"+include+"', skipping.")
-			continue
-		}
-		importVisited[include] = true
-
-		if _, err := os.Stat(include); err != nil {
-			if !os.IsNotExist(err) {
-				// File exists but is unreadable (e.g. EACCES) - log so the
-				// user knows why commands are missing.
-				logger("error", "Cannot access import file '"+include+"': "+err.Error())
-			}
-			// Skipping missing or unreadable files allows subcommands to be
-			// separated into public and private sets.
-			continue
-		}
-		config, err := getConfig(include)
-		if err != nil {
-			logger("error", "Could not load imported config '"+include+"': "+err.Error())
-			continue
-		}
-		includeCommands := getCommands(config)
-		for _, command := range includeCommands {
-			commands[command.Name()] = command
-		}
+		processImport(include, commands)
 	}
 
 	var names []string
@@ -624,7 +644,7 @@ func setupApp(localArgs []string) *cobra.Command {
 	} else {
 		AhoyConf.srcDir = filepath.Dir(AhoyConf.srcFile)
 		if AhoyConf.srcFile != "" {
-			importVisited[AhoyConf.srcFile] = true
+			importVisited[normalizePath(AhoyConf.srcFile)] = true
 		}
 		// If we don't have a sourcefile, then just supply the default commands.
 		if AhoyConf.srcFile == "" {
