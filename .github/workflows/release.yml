@@ -58,7 +58,8 @@ jobs:
       - name: Install Syft for SBOM generation
         uses: anchore/sbom-action/download-syft@7b36ad622f042cab6f59a75c2ac24ccb256e9b45 # v0.20.4
         with:
-          syft-version: "latest"
+          # Pinned for reproducible, deterministic SBOM generation (no "latest" drift).
+          syft-version: "v1.45.1"
 
       - name: Determine release mode
         id: release_mode
