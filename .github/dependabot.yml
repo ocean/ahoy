@@ -9,6 +9,8 @@ updates:
     directory: "/v2/" # Location of package manifests
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     assignees:
       - "ocean"
 
@@ -17,5 +19,7 @@ updates:
     directory: "/v2/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     assignees:
       - "ocean"
