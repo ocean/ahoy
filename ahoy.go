@@ -405,7 +405,24 @@ func getCommands(config Config) []*cobra.Command {
 				command.Stdout = os.Stdout
 				command.Stdin = os.Stdin
 				command.Stderr = os.Stderr
-				command.Env = append(command.Environ(), cmdEnvVars...)
+				// Build the environment so cmdEnvVars always take precedence.
+				// macOS getenv(3) returns the first match, so we put cmdEnvVars
+				// first and append inherited entries only when their key is not
+				// already covered.
+				overridden := make(map[string]bool, len(cmdEnvVars))
+				for _, kv := range cmdEnvVars {
+					if i := strings.Index(kv, "="); i > 0 {
+						overridden[kv[:i]] = true
+					}
+				}
+				mergedEnv := make([]string, len(cmdEnvVars), len(cmdEnvVars)+len(command.Environ()))
+				copy(mergedEnv, cmdEnvVars)
+				for _, kv := range command.Environ() {
+					if i := strings.Index(kv, "="); i <= 0 || !overridden[kv[:i]] {
+						mergedEnv = append(mergedEnv, kv)
+					}
+				}
+				command.Env = mergedEnv
 				if err := command.Run(); err != nil {
 					fmt.Fprintln(os.Stderr)
 					return err
