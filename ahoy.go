@@ -49,9 +49,13 @@ var (
 	importVisited   map[string]bool
 )
 
-// The build version can be set using the go linker flag `-ldflags "-X main.version=$VERSION"`
-// Complete command: `go build -ldflags "-X main.version=$VERSION"`
-var version string
+// Build metadata variables injected at link time via -ldflags "-X main.version=...".
+var (
+	version   string
+	GitCommit string
+	GitBranch string
+	BuildTime string
+)
 
 // AhoyConf stores the global config.
 var AhoyConf struct {
