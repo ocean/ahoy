@@ -667,12 +667,12 @@ func setupApp(localArgs []string) *cobra.Command {
 		if AhoyConf.srcFile != "" {
 			importVisited[normalizePath(AhoyConf.srcFile)] = true
 		}
-		// If we don't have a sourcefile, then just supply the default commands.
+		// If we don't have a sourcefile, just supply the default commands and
+		// return — main() is responsible for calling Execute().
 		if AhoyConf.srcFile == "" {
 			commands := addDefaultCommands([]*cobra.Command{})
 			rootCmd.AddCommand(commands...)
-			rootCmd.Execute()
-			os.Exit(0)
+			return rootCmd
 		}
 		config, err := getConfig(AhoyConf.srcFile)
 		if err != nil {
