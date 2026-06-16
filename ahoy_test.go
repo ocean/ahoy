@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -232,6 +233,25 @@ func TestGetConfigPathErrorOnBogusPath(t *testing.T) {
 	_, err := (&appState{sourcefile: "~/bogus/path"}).getConfigPath()
 	if err == nil {
 		t.Error("getConfigPath did not fail when passed a bogus path.")
+	}
+}
+
+func TestGetConfigPathReturnsErrNoConfigWhenNotFound(t *testing.T) {
+	// Change to a temp directory outside the repo tree so the walk-up never
+	// finds a .ahoy.yml and getConfigPath must return errNoConfig.
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chdir(orig) })
+
+	_, gotErr := (&appState{}).getConfigPath()
+	if !errors.Is(gotErr, errNoConfig) {
+		t.Errorf("expected errNoConfig, got %v", gotErr)
 	}
 }
 
