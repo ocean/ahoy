@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -283,54 +282,6 @@ func validateEnvFile(cmdName, envPath, configFile string) []ValidationIssue {
 	}
 
 	return issues
-}
-
-// PrintValidationIssues prints validation issues in a user-friendly format.
-func PrintValidationIssues(result ValidationResult) {
-	if len(result.Issues) == 0 {
-		return
-	}
-
-	fmt.Fprintf(os.Stderr, "\nConfiguration Validation Issues:\n")
-	fmt.Fprintf(os.Stderr, "================================\n\n")
-
-	errorCount := 0
-	warningCount := 0
-	infoCount := 0
-
-	for _, issue := range result.Issues {
-		switch issue.Severity {
-		case "error":
-			fmt.Fprintf(os.Stderr, "ERROR: %s\n", issue.Message)
-			errorCount++
-		case "warning":
-			fmt.Fprintf(os.Stderr, "WARNING: %s\n", issue.Message)
-			warningCount++
-		case "info":
-			fmt.Fprintf(os.Stderr, "INFO: %s\n", issue.Message)
-			infoCount++
-		}
-
-		if issue.File != "" {
-			fmt.Fprintf(os.Stderr, "File: %s\n", issue.File)
-		}
-		if issue.Field != "" {
-			fmt.Fprintf(os.Stderr, "Field: %s\n", issue.Field)
-		}
-		if issue.RequiredVersion != "" && issue.CurrentVersion != "" {
-			fmt.Fprintf(os.Stderr, "Required Version: %s (current: %s)\n", issue.RequiredVersion, issue.CurrentVersion)
-		}
-		if issue.Suggestion != "" {
-			fmt.Fprintf(os.Stderr, "Suggestion: %s\n", issue.Suggestion)
-		}
-		fmt.Fprintf(os.Stderr, "\n")
-	}
-
-	fmt.Fprintf(os.Stderr, "Summary: %d error(s), %d warning(s), %d info\n", errorCount, warningCount, infoCount)
-
-	if errorCount > 0 {
-		fmt.Fprintf(os.Stderr, "\nRun 'ahoy config validate' for more detailed diagnostics and solutions.\n")
-	}
 }
 
 // ConfigReport contains comprehensive diagnostic information about an Ahoy configuration.
