@@ -58,7 +58,11 @@ commands:
 	if err != nil {
 		t.Fatalf("Failed to change directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	}()
 
 	// Test that getConfigPath finds the .ahoy.yml file
 	foundPath, err := (&appState{}).getConfigPath()

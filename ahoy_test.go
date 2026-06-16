@@ -19,7 +19,7 @@ func TestOverrideExample(t *testing.T) {
 	expected := "Overrode you.\n"
 	actual, _ := appRun([]string{"ahoy", "-f", "testdata/override-base.ahoy.yml", "docker", "override-example"})
 	if expected != actual {
-		t.Errorf("ahoy docker override-example: expected - %s; actual - %s", string(expected), string(actual))
+		t.Errorf("ahoy docker override-example: expected - %s; actual - %s", expected, actual)
 	}
 }
 
@@ -189,7 +189,9 @@ func TestGetConfig(t *testing.T) {
 		t.Error("Something went wrong marshalling the test object.")
 	}
 
-	testFile.Write([]byte(testYaml))
+	if _, err = testFile.Write(testYaml); err != nil {
+		t.Fatal("Something went wrong writing the test yaml file.")
+	}
 
 	config, err := getConfig("test_getConfig.yml")
 	if err != nil {
@@ -214,7 +216,7 @@ func TestGetConfigPath(t *testing.T) {
 	expected := filepath.Join(pwd, ".ahoy.yml")
 	actual, _ := (&appState{}).getConfigPath()
 	if expected != actual {
-		t.Errorf("ahoy docker override-example: expected - %s; actual - %s", string(expected), string(actual))
+		t.Errorf("ahoy docker override-example: expected - %s; actual - %s", expected, actual)
 	}
 
 	// Passing known path works as expected.
@@ -222,7 +224,7 @@ func TestGetConfigPath(t *testing.T) {
 	actual, _ = (&appState{sourcefile: expected}).getConfigPath()
 
 	if expected != actual {
-		t.Errorf("ahoy docker override-example: expected - %s; actual - %s", string(expected), string(actual))
+		t.Errorf("ahoy docker override-example: expected - %s; actual - %s", expected, actual)
 	}
 
 	// TODO: Passing directory should return default
@@ -247,7 +249,11 @@ func TestGetConfigPathReturnsErrNoConfigWhenNotFound(t *testing.T) {
 	if err := os.Chdir(tmp); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chdir(orig) })
+	t.Cleanup(func() {
+		if err := os.Chdir(orig); err != nil {
+			t.Errorf("failed to restore working directory: %v", err)
+		}
+	})
 
 	_, gotErr := (&appState{}).getConfigPath()
 	if !errors.Is(gotErr, errNoConfig) {
@@ -307,7 +313,7 @@ func appRun(args []string) (string, error) {
 	}
 
 	cmd.SetArgs(cmdArgs)
-	cmd.Execute()
+	_ = cmd.Execute()
 
 	w.Close()
 	wErr.Close()

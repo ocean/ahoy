@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,7 +32,11 @@ func downloadFile(rawURL, destPath string) error {
 		Timeout: 30 * time.Second,
 	}
 
-	resp, err := client.Get(rawURL)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request for %s: %v", rawURL, err)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch URL %s: %v", rawURL, err)
 	}

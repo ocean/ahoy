@@ -375,9 +375,10 @@ func (s *appState) getCommands(config Config) []*cobra.Command {
 				// Replace the entry point placeholders.
 				cmdEntrypoint = config.Entrypoint[:]
 				for i := range cmdEntrypoint {
-					if cmdEntrypoint[i] == "{{cmd}}" {
+					switch cmdEntrypoint[i] {
+					case "{{cmd}}":
 						cmdEntrypoint[i] = cmdString
-					} else if cmdEntrypoint[i] == "{{name}}" {
+					case "{{name}}":
 						cmdEntrypoint[i] = cmdName
 					}
 				}
@@ -574,7 +575,9 @@ func (s *appState) noArgsAction(cmd *cobra.Command, args []string) {
 		s.logger("fatal", msg)
 	}
 
-	cmd.Help()
+	if err := cmd.Help(); err != nil {
+		s.logger("error", err.Error())
+	}
 
 	if s.srcFile == "" {
 		s.logger("error", "No .ahoy.yml found. You can use 'ahoy init' to download an example.")
@@ -610,12 +613,16 @@ func (s *appState) beforeCommand(cmd *cobra.Command, args []string) error {
 			// Find the subcommand and show its help.
 			for _, subcmd := range cmd.Commands() {
 				if subcmd.Name() == args[0] {
-					subcmd.Help()
+					if err := subcmd.Help(); err != nil {
+						s.logger("error", err.Error())
+					}
 					os.Exit(0)
 				}
 			}
 		}
-		cmd.Help()
+		if err := cmd.Help(); err != nil {
+			s.logger("error", err.Error())
+		}
 		os.Exit(0)
 	}
 	return nil
@@ -657,10 +664,9 @@ func (s *appState) setupApp(localArgs []string) *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&simulateVersion, "simulate-version", "", "simulate a specific Ahoy version for testing")
 
 	// Mark help, version, and internal flags as hidden since we handle them manually.
-	rootCmd.PersistentFlags().MarkHidden("help")
-	rootCmd.PersistentFlags().MarkHidden("version")
-	rootCmd.PersistentFlags().MarkHidden("generate-bash-completion")
-	rootCmd.PersistentFlags().MarkHidden("simulate-version")
+	for _, name := range []string{"help", "version", "generate-bash-completion", "simulate-version"} {
+		_ = rootCmd.PersistentFlags().MarkHidden(name)
+	}
 
 	// Disable default help command.
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
@@ -792,7 +798,9 @@ func main() {
 	// Check for invalid flag error from initFlags - show help and exit 1.
 	if state.invalidFlagError != "" {
 		fmt.Print(state.invalidFlagError)
-		rootCmd.Help()
+		if err := rootCmd.Help(); err != nil {
+			log.Printf("help error: %v", err)
+		}
 		os.Exit(1)
 	}
 
@@ -806,7 +814,9 @@ func main() {
 	}
 
 	if state.helpFlagSet {
-		rootCmd.Help()
+		if err := rootCmd.Help(); err != nil {
+			log.Printf("help error: %v", err)
+		}
 		os.Exit(0)
 	}
 
@@ -838,7 +848,9 @@ func main() {
 		drained := make(chan struct{})
 		go func() {
 			defer close(drained)
-			io.Copy(oldStderr, r)
+			if _, err := io.Copy(oldStderr, r); err != nil {
+				log.Printf("stderr drain error: %v", err)
+			}
 		}()
 
 		err = rootCmd.Execute()
