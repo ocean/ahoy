@@ -98,7 +98,9 @@ func resetFlagState() {
 func normaliseLongFlagPrefixes(args []string) []string {
 	out := make([]string, len(args))
 	for i, arg := range args {
-		if strings.HasPrefix(arg, "--") {
+		if arg == "--" {
+			out[i] = arg
+		} else if strings.HasPrefix(arg, "--") {
 			out[i] = "-" + strings.TrimPrefix(arg, "--")
 		} else {
 			out[i] = arg
