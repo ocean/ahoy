@@ -52,7 +52,8 @@ func downloadFile(rawURL, destPath string) error {
 	// Always clean up the temp file; harmless no-op after a successful rename.
 	defer os.Remove(tmpPath)
 
-	if _, err = io.Copy(out, resp.Body); err != nil {
+	const maxDownloadBytes = 10 * 1024 * 1024 // 10 MB — generous for any YAML config file
+	if _, err = io.Copy(out, io.LimitReader(resp.Body, maxDownloadBytes)); err != nil {
 		out.Close()
 		return fmt.Errorf("failed to write file %s: %v", destPath, err)
 	}
