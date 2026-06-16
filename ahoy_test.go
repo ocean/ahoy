@@ -289,6 +289,9 @@ func appRun(args []string) (string, error) {
 			skipNext = true
 			continue
 		}
+		if strings.HasPrefix(arg, "--file=") || strings.HasPrefix(arg, "-f=") {
+			continue
+		}
 		if arg == "-v" || arg == "--verbose" {
 			continue
 		}
