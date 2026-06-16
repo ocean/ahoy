@@ -108,10 +108,37 @@ func compareVersions(v1, v2 string) int {
 	if v1HasPre && !v2HasPre {
 		return -1 // Pre-release < normal version.
 	}
-	if v1PreRelease < v2PreRelease {
-		return -1
-	} else if v1PreRelease > v2PreRelease {
-		return 1
+	// Compare pre-release labels segment by segment so multi-digit numeric
+	// identifiers sort correctly (e.g. rc10 > rc9).
+	pre1Segs := strings.Split(v1PreRelease, ".")
+	pre2Segs := strings.Split(v2PreRelease, ".")
+	maxLen := len(pre1Segs)
+	if len(pre2Segs) > maxLen {
+		maxLen = len(pre2Segs)
+	}
+	for i := range maxLen {
+		var s1, s2 string
+		if i < len(pre1Segs) {
+			s1 = pre1Segs[i]
+		}
+		if i < len(pre2Segs) {
+			s2 = pre2Segs[i]
+		}
+		n1, err1 := strconv.Atoi(s1)
+		n2, err2 := strconv.Atoi(s2)
+		if err1 == nil && err2 == nil {
+			if n1 < n2 {
+				return -1
+			} else if n1 > n2 {
+				return 1
+			}
+		} else {
+			if s1 < s2 {
+				return -1
+			} else if s1 > s2 {
+				return 1
+			}
+		}
 	}
 	return 0
 }
