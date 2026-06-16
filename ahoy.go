@@ -17,6 +17,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// errNoConfig is returned by getConfigPath when no .ahoy.yml file can be
+// located in the current directory tree and no -f flag was given.
+var errNoConfig = errors.New("no .ahoy.yml config file found")
+
 // Config handles the overall configuration in an ahoy.yml file
 // with one Config per file.
 type Config struct {
@@ -159,7 +163,7 @@ func (s *appState) getConfigPath() (string, error) {
 		dir = filepath.Dir(dir)
 	}
 	s.logger("debug", "Can't find an .ahoy.yml file.")
-	return "", nil
+	return "", errNoConfig
 }
 
 func getConfig(file string) (Config, error) {
@@ -665,20 +669,16 @@ func (s *appState) setupApp(localArgs []string) *cobra.Command {
 
 	var err error
 	s.srcFile, err = s.getConfigPath()
-	if err != nil {
+	if errors.Is(err, errNoConfig) {
+		// No config found — supply default commands only and return early.
+		commands := s.addDefaultCommands([]*cobra.Command{})
+		rootCmd.AddCommand(commands...)
+		return rootCmd
+	} else if err != nil {
 		s.logger("fatal", err.Error())
 	} else {
 		s.srcDir = filepath.Dir(s.srcFile)
-		if s.srcFile != "" {
-			s.importVisited[normalizePath(s.srcFile)] = true
-		}
-		// If we don't have a sourcefile, just supply the default commands and
-		// return — main() is responsible for calling Execute().
-		if s.srcFile == "" {
-			commands := s.addDefaultCommands([]*cobra.Command{})
-			rootCmd.AddCommand(commands...)
-			return rootCmd
-		}
+		s.importVisited[normalizePath(s.srcFile)] = true
 		config, err := getConfig(s.srcFile)
 		if err != nil {
 			s.logger("fatal", err.Error())
