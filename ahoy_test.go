@@ -45,6 +45,15 @@ func TestGetCommands(t *testing.T) {
 }
 
 func TestGetSubCommand(t *testing.T) {
+	// Save and restore the global state this test mutates, so it stays isolated
+	// from other tests regardless of execution order.
+	origSrcDir := AhoyConf.srcDir
+	origImportVisited := importVisited
+	t.Cleanup(func() {
+		AhoyConf.srcDir = origSrcDir
+		importVisited = origImportVisited
+	})
+
 	// Since we're not running the app directly, globals don't get reset, so
 	// we need to reset them ourselves. TODO: Remove these globals somehow.
 	AhoyConf.srcDir = ""
@@ -248,12 +257,14 @@ func appRun(args []string) (string, error) {
 	if pipeErr != nil {
 		return "", fmt.Errorf("failed to create stdout pipe: %w", pipeErr)
 	}
+	defer r.Close()
+
 	rErr, wErr, pipeErr := os.Pipe()
 	if pipeErr != nil {
 		w.Close()
-		r.Close()
 		return "", fmt.Errorf("failed to create stderr pipe: %w", pipeErr)
 	}
+	defer rErr.Close()
 
 	os.Stdout = w
 	os.Stderr = wErr
@@ -399,6 +410,17 @@ commands:
 		t.Fatal(err)
 	}
 
+	// Save and restore the global state this test mutates, so it stays isolated
+	// from other tests regardless of execution order.
+	origSrcDir := AhoyConf.srcDir
+	origImportVisited := importVisited
+	origLogOutput := log.Writer()
+	t.Cleanup(func() {
+		AhoyConf.srcDir = origSrcDir
+		importVisited = origImportVisited
+		log.SetOutput(origLogOutput)
+	})
+
 	// Test multi-branch imports. Both branchA and branchB should successfully resolve shared.yml.
 	// We reset global state as in other tests.
 	AhoyConf.srcDir = "test_imports"
@@ -440,9 +462,9 @@ commands:
 	importVisited[normalizePath("test_imports/root.yml")] = true
 
 	// Capturing log/stdout to verify circular import warning is printed.
+	// The original log output is restored by the t.Cleanup above.
 	var logBuf bytes.Buffer
 	log.SetOutput(&logBuf)
-	defer log.SetOutput(os.Stderr) // restore original
 
 	circularCmds := getSubCommands([]string{
 		"circularA.yml",
