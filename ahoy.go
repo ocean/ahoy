@@ -176,7 +176,7 @@ func getConfig(file string) (Config, error) {
 	// All ahoy files (and imports) must specify the ahoy version.
 	// This is so we can support backwards compatibility in the future.
 	if config.AhoyAPI != "v2" {
-		err = errors.New("Ahoy only supports API version 'v2', but '" + config.AhoyAPI + "' given in " + sourcefile)
+		err = errors.New("Ahoy only supports API version 'v2', but '" + config.AhoyAPI + "' given in " + file)
 		return config, err
 	}
 
