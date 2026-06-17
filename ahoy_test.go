@@ -46,7 +46,7 @@ func TestGetCommands(t *testing.T) {
 }
 
 func TestGetSubCommand(t *testing.T) {
-	// Each scenario uses its own appState — no global save/restore needed.
+	// Each scenario uses its own appState, no global save/restore needed.
 	state := &appState{}
 
 	// When empty return empty list of commands.

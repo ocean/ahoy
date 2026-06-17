@@ -35,7 +35,7 @@ func TestFlagParsing(t *testing.T) {
 }
 
 func TestInitFlags(t *testing.T) {
-	// Test with empty flags — srcDir should be reset to empty string.
+	// Test with empty flags - srcDir should be reset to empty string.
 	s := newAppState()
 	s.initFlags([]string{})
 	if s.srcDir != "" {
