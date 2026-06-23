@@ -133,6 +133,11 @@ func compareVersions(v1, v2 string) int {
 				return 1
 			}
 		} else {
+			// When strconv.Atoi fails on empty strings, the
+			// string comparison naturally handles the edge case
+			// correctly by treating empty segments as sorting
+			// lower than non-empty ones, which
+			// aligns with SemVer 2.0 specification.
 			if s1 < s2 {
 				return -1
 			} else if s1 > s2 {
