@@ -313,14 +313,21 @@ func appRun(args []string) (string, error) {
 	}
 
 	cmd.SetArgs(cmdArgs)
-	_ = cmd.Execute()
+	execErr := cmd.Execute()
 
 	w.Close()
 	wErr.Close()
 	out, _ := io.ReadAll(r)
 	errOut, _ := io.ReadAll(rErr)
 
-	// If there was an error output, include it
+	// Report a failure if either the command itself returned an error or
+	// anything was written to stderr.
+	if execErr != nil && len(errOut) > 0 {
+		return string(out), fmt.Errorf("%w: %s", execErr, errOut)
+	}
+	if execErr != nil {
+		return string(out), execErr
+	}
 	if len(errOut) > 0 {
 		return string(out), fmt.Errorf("%s", errOut)
 	}
