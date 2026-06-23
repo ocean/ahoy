@@ -58,9 +58,14 @@ func downloadFile(rawURL, destPath string) error {
 	defer os.Remove(tmpPath)
 
 	const maxDownloadBytes = 5 * 1024 * 1024 // 5 MB - generous for any YAML config file
-	if _, err = io.Copy(out, io.LimitReader(resp.Body, maxDownloadBytes)); err != nil {
+	written, err := io.Copy(out, io.LimitReader(resp.Body, maxDownloadBytes+1))
+	if err != nil {
 		out.Close()
 		return fmt.Errorf("failed to write file %s: %v", destPath, err)
+	}
+	if written > maxDownloadBytes {
+		out.Close()
+		return fmt.Errorf("failed to download file successfully, file %s exceeds maximum size of %d bytes", destPath, maxDownloadBytes)
 	}
 
 	// Close explicitly (not via defer) so buffered write errors reported at
