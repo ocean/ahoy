@@ -30,7 +30,7 @@ commands:
 
   exec:
     usage: Run a command in the cli container
-    cmd: docker compose exec cli bash -c "$@"
+    cmd: docker compose exec cli "$@"
 
   mysql:
     usage: Open a MySQL shell
@@ -41,7 +41,7 @@ commands:
     description: |
       Pipe a SQL file into the database.
 
-      Example: ahoy mysql-import < backup.sql
+      Example: ahoy docker mysql-import < backup.sql
     cmd: docker compose exec -T db mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME"
 
   mysql-dump:
@@ -49,7 +49,7 @@ commands:
     description: |
       Redirect output to save a backup.
 
-      Example: ahoy mysql-dump > backup.sql
+      Example: ahoy docker mysql-dump > backup.sql
     cmd: docker compose exec -T db mysqldump -u"$DB_USER" -p"$DB_PASS" "$DB_NAME"
 
   override-example:
